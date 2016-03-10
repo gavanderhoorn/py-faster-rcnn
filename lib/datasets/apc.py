@@ -225,12 +225,12 @@ class apc(imdb):
         return comp_id
 
     def _get_apc_results_file_template(self):
-        # VOCdevkit/results/VOC2007/Main/<comp_id>_det_test_aeroplane.txt
+        # DRapc/results/APC2016/Main/<comp_id>_det_test_aeroplane.txt
         filename = self._get_comp_id() + '_det_' + self._image_set + '_{:s}.txt'
         path = os.path.join(
             self._devkit_path,
             'results',
-            'VOC' + self._year,
+            'APC' + self._year,
             'Main',
             filename)
         return path
@@ -239,7 +239,7 @@ class apc(imdb):
         for cls_ind, cls in enumerate(self.classes):
             if cls == '__background__':
                 continue
-            print 'Writing {} VOC results file'.format(cls)
+            print 'Writing {} APC results file'.format(cls)
             filename = self._get_apc_results_file_template().format(cls)
             with open(filename, 'wt') as f:
                 for im_ind, index in enumerate(self.image_index):
@@ -256,12 +256,12 @@ class apc(imdb):
     def _do_python_eval(self, output_dir = 'output'):
         annopath = os.path.join(
             self._devkit_path,
-            'VOC' + self._year,
+            'APC' + self._year,
             'Annotations',
             '{:s}.xml')
         imagesetfile = os.path.join(
             self._devkit_path,
-            'VOC' + self._year,
+            'APC' + self._year,
             'ImageSets',
             'Main',
             self._image_set + '.txt')
