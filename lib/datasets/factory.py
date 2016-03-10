@@ -10,6 +10,7 @@
 __sets = {}
 
 from datasets.pascal_voc import pascal_voc
+from datasets.apc import apc
 from datasets.coco import coco
 import numpy as np
 
@@ -18,6 +19,14 @@ for year in ['2007', '2012']:
     for split in ['train', 'val', 'trainval', 'test']:
         name = 'voc_{}_{}'.format(year, split)
         __sets[name] = (lambda split=split, year=year: pascal_voc(split, year))
+
+# Set up apc_2016_<split>
+for year in ['2016']:
+    for split in ['train', 'val', 'trainval', 'test']:
+        name = 'apc_{}_{}'.format(year, split)
+        __sets[name] = (lambda split=split, year=year: apc(split, year))
+
+
 
 # Set up coco_2014_<split>
 for year in ['2014']:
