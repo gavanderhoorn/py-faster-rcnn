@@ -28,7 +28,7 @@ class apc(imdb):
                             else devkit_path
         self._data_path = os.path.join(self._devkit_path, 'APC' + self._year)
         self._classes = ('__background__', # always index 0
-						'headphones','remotecontrol','pingpong'	
+						'book','bowl','ball','halter','dove'	
 						)
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_ext = '.jpg'
@@ -86,7 +86,7 @@ class apc(imdb):
         """
         Return the default path where APC is expected to be installed.
         """
-        return os.path.join(cfg.DATA_DIR, 'DRapc' + self._year)
+        return os.path.join(cfg.DATA_DIR, 'DRapc2016')
 
     def gt_roidb(self):
         """

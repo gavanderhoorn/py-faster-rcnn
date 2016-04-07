@@ -183,10 +183,11 @@ def im_detect(net, im, boxes=None):
 
     return scores, pred_boxes
 
-def vis_detections(im, class_name, dets, thresh=0.3):
+def vis_detections(im, class_name, dets, thresh=0.5):
     """Visual debugging of detections."""
     import matplotlib.pyplot as plt
     im = im[:, :, (2, 1, 0)]
+    idx = 0
     for i in xrange(np.minimum(10, dets.shape[0])):
         bbox = dets[i, :4]
         score = dets[i, -1]
@@ -200,7 +201,9 @@ def vis_detections(im, class_name, dets, thresh=0.3):
                               edgecolor='g', linewidth=3)
                 )
             plt.title('{}  {:.3f}'.format(class_name, score))
-            plt.show()
+            output_img = '/home/jihongju/Pictures/'+class_name+str(idx)+'.jpg'
+            plt.savefig(output_img)
+            idx = idx + 1
 
 def apply_nms(all_boxes, thresh):
     """Apply non-maximum suppression to all predicted boxes output by the
