@@ -23,6 +23,7 @@ import numpy as np
 import scipy.io as sio
 import caffe, os, sys, cv2
 import argparse
+import os
 
 CLASSES = ('__background__',
            'aeroplane', 'bicycle', 'bird', 'boat',
