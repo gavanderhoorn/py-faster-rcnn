@@ -183,31 +183,37 @@ def im_detect(net, im, boxes=None):
 
     return scores, pred_boxes
 
-def vis_detections(im, class_name, dets, thresh=0):
+def vis_detections(im, classes, boxes_all, thresh=0):
 	"""Visual debugging of detections."""
-	print "enter vid detect"
-	import matplotlib.pyplot as plt
-	im = im[:, :, (2, 1, 0)]
+	print "Classes: "
+	print classes
+
+	image = (im[:, :, (2, 1, 0)]).copy()
+	print im.shape
 	idx = 0
-	for i in xrange(np.minimum(10, dets.shape[0])):
-		bbox = dets[i, :4]
-		score = dets[i, -1]
-		#if score > thresh:
-		if True:
-			print im
-			plt.cla()
-			plt.imshow(im)
-			plt.gca().add_patch(
-					plt.Rectangle((bbox[0], bbox[1]),
-						bbox[2] - bbox[0],
-						bbox[3] - bbox[1], fill=False,
-						edgecolor='g', linewidth=3)
-					)
-			plt.title('{}  {:.3f}'.format(class_name, score))
-			#output_img = '/home/jihongju/Pictures/'+class_name+str(idx)+'.jpg'
-			#plt.savefig(output_img)
-			plt.show()
-			idx = idx + 1
+	#for i in xrange(np.minimum(10, boxes.shape[0])):
+	for j in xrange(len(classes)):
+		boxes = boxes_all[j]
+	
+		for i in xrange(len(boxes)):
+			bbox = boxes[i, :4]
+			score = boxes[i, -1]
+			#if score > thresh:
+			if True:
+				print im.shape
+				#cv2.imshow('Image',im)
+				xmin = int(bbox[0])
+				xmax = int(bbox[2])
+				ymin = int(bbox[1])
+				ymax = int(bbox[3])
+				print xmin
+				print xmax
+				print ymin
+				print ymax
+				cv2.rectangle(image,(xmin, ymin),(xmax, ymax),(0,255,0), 2)
+				cv2.imshow('Image',image)
+				cv2.waitKey(1)
+				idx = idx + 1
 
 def apply_nms(all_boxes, thresh):
     """Apply non-maximum suppression to all predicted boxes output by the
@@ -331,26 +337,41 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 			# ground truth.
 			box_proposals = roidb[i]['boxes'][roidb[i]['gt_classes'] == 0]
 
+		print imdb.image_path_at(i)
 		im = cv2.imread(imdb.image_path_at(i))
 		_t['im_detect'].tic()
 		scores, boxes = im_detect(net, im, box_proposals)
 		_t['im_detect'].toc()
 
+		print "Scores"
+		print scores
+
+		print "Boxes"
+		print boxes
+
 		_t['misc'].tic()
 		# skip j = 0, because it's the background class
 		for j in xrange(1, imdb.num_classes):
 			print "Scores: "
-			inds = np.where(scores[:, j] > thresh)[0]
+			#inds = np.where(scores[:, j] > thresh)[0]
+			inds = np.where(scores[:, j] > 0)[0]
 			cls_scores = scores[inds, j]
 			cls_boxes = boxes[inds, j*4:(j+1)*4]
 			cls_dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])) \
 					.astype(np.float32, copy=False)
 			keep = nms(cls_dets, cfg.TEST.NMS)
 			cls_dets = cls_dets[keep, :]
-			if vis:
-				print "show image"
-				vis_detections(im, imdb.classes[j], cls_dets)
 			all_boxes[j][i] = cls_dets
+
+		print "i: "
+		print i
+
+		print "All boxes: "
+		print all_boxes[:][i+1]
+
+		if vis:
+			print "show image"
+			vis_detections(im, imdb.classes, all_boxes[:][i+1])
 
 		# Limit to max_per_image detections *over all classes*
 		if max_per_image > 0:
@@ -373,25 +394,3 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 
 	print 'Evaluating detections'
 	imdb.evaluate_detections(all_boxes, output_dir)
-
-def vis_detections_image_wise(im, class_name, dets, thresh=0.5):
-	"""Visual debugging of detections."""
-	import matplotlib.pyplot as plt
-	im = im[:, :, (2, 1, 0)]
-	idx = 0
-	for i in xrange(np.minimum(10, dets.shape[0])):
-		bbox = dets[i, :4]
-		score = dets[i, -1]
-		if score > thresh:
-			plt.cla()
-			plt.imshow(im)
-			plt.gca().add_patch(
-					plt.Rectangle((bbox[0], bbox[1]),
-						bbox[2] - bbox[0],
-						bbox[3] - bbox[1], fill=False,
-						edgecolor='g', linewidth=3)
-					)
-			plt.title('{}  {:.3f}'.format(class_name, score))
-			output_img = '/home/jihongju/Pictures/'+class_name+str(idx)+'.jpg'
-			plt.savefig(output_img)
-			idx = idx + 1
