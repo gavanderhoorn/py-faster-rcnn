@@ -183,27 +183,31 @@ def im_detect(net, im, boxes=None):
 
     return scores, pred_boxes
 
-def vis_detections(im, class_name, dets, thresh=0.5):
-    """Visual debugging of detections."""
-    import matplotlib.pyplot as plt
-    im = im[:, :, (2, 1, 0)]
-    idx = 0
-    for i in xrange(np.minimum(10, dets.shape[0])):
-        bbox = dets[i, :4]
-        score = dets[i, -1]
-        if score > thresh:
-            plt.cla()
-            plt.imshow(im)
-            plt.gca().add_patch(
-                plt.Rectangle((bbox[0], bbox[1]),
-                              bbox[2] - bbox[0],
-                              bbox[3] - bbox[1], fill=False,
-                              edgecolor='g', linewidth=3)
-                )
-            plt.title('{}  {:.3f}'.format(class_name, score))
-            output_img = '/home/jihongju/Pictures/'+class_name+str(idx)+'.jpg'
-            plt.savefig(output_img)
-            idx = idx + 1
+def vis_detections(im, class_name, dets, thresh=0):
+	"""Visual debugging of detections."""
+	print "enter vid detect"
+	import matplotlib.pyplot as plt
+	im = im[:, :, (2, 1, 0)]
+	idx = 0
+	for i in xrange(np.minimum(10, dets.shape[0])):
+		bbox = dets[i, :4]
+		score = dets[i, -1]
+		#if score > thresh:
+		if True:
+			print im
+			plt.cla()
+			plt.imshow(im)
+			plt.gca().add_patch(
+					plt.Rectangle((bbox[0], bbox[1]),
+						bbox[2] - bbox[0],
+						bbox[3] - bbox[1], fill=False,
+						edgecolor='g', linewidth=3)
+					)
+			plt.title('{}  {:.3f}'.format(class_name, score))
+			#output_img = '/home/jihongju/Pictures/'+class_name+str(idx)+'.jpg'
+			#plt.savefig(output_img)
+			plt.show()
+			idx = idx + 1
 
 def apply_nms(all_boxes, thresh):
     """Apply non-maximum suppression to all predicted boxes output by the
@@ -227,72 +231,167 @@ def apply_nms(all_boxes, thresh):
             nms_boxes[cls_ind][im_ind] = dets[keep, :].copy()
     return nms_boxes
 
+#def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
+#   """Test a Fast R-CNN network on an image database."""
+#   num_images = len(imdb.image_index)
+#   # all detections are collected into:
+#   #    all_boxes[cls][image] = N x 5 array of detections in
+#   #    (x1, y1, x2, y2, score)
+#   all_boxes = [[[] for _ in xrange(num_images)]
+#                for _ in xrange(imdb.num_classes)]
+#
+#   output_dir = get_output_dir(imdb, net)
+#
+#   # timers
+#   _t = {'im_detect' : Timer(), 'misc' : Timer()}
+#
+#   if not cfg.TEST.HAS_RPN:
+#       roidb = imdb.roidb
+#
+#   for i in xrange(num_images):
+#       # filter out any ground truth boxes
+#       if cfg.TEST.HAS_RPN:
+#           box_proposals = None
+#       else:
+#           # The roidb may contain ground-truth rois (for example, if the roidb
+#           # comes from the training or val split). We only want to evaluate
+#           # detection on the *non*-ground-truth rois. We select those the rois
+#           # that have the gt_classes field set to 0, which means there's no
+#           # ground truth.
+#           box_proposals = roidb[i]['boxes'][roidb[i]['gt_classes'] == 0]
+#
+#       im = cv2.imread(imdb.image_path_at(i))
+#       _t['im_detect'].tic()
+#       scores, boxes = im_detect(net, im, box_proposals)
+#       _t['im_detect'].toc()
+#
+#       _t['misc'].tic()
+#       # skip j = 0, because it's the background class
+#       for j in xrange(1, imdb.num_classes):
+#           inds = np.where(scores[:, j] > thresh)[0]
+#           cls_scores = scores[inds, j]
+#           cls_boxes = boxes[inds, j*4:(j+1)*4]
+#           cls_dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])) \
+#               .astype(np.float32, copy=False)
+#           keep = nms(cls_dets, cfg.TEST.NMS)
+#           cls_dets = cls_dets[keep, :]
+#           if vis:
+#               vis_detections(im, imdb.classes[j], cls_dets)
+#           all_boxes[j][i] = cls_dets
+#
+#       # Limit to max_per_image detections *over all classes*
+#       if max_per_image > 0:
+#           image_scores = np.hstack([all_boxes[j][i][:, -1]
+#                                     for j in xrange(1, imdb.num_classes)])
+#           if len(image_scores) > max_per_image:
+#               image_thresh = np.sort(image_scores)[-max_per_image]
+#               for j in xrange(1, imdb.num_classes):
+#                   keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
+#                   all_boxes[j][i] = all_boxes[j][i][keep, :]
+#       _t['misc'].toc()
+#
+#       print 'im_detect: {:d}/{:d} {:.3f}s {:.3f}s' \
+#             .format(i + 1, num_images, _t['im_detect'].average_time,
+#                     _t['misc'].average_time)
+#
+#   det_file = os.path.join(output_dir, 'detections.pkl')
+#   with open(det_file, 'wb') as f:
+#       cPickle.dump(all_boxes, f, cPickle.HIGHEST_PROTOCOL)
+#
+#   print 'Evaluating detections'
+#   imdb.evaluate_detections(all_boxes, output_dir)
+
+
 def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
-    """Test a Fast R-CNN network on an image database."""
-    num_images = len(imdb.image_index)
-    # all detections are collected into:
-    #    all_boxes[cls][image] = N x 5 array of detections in
-    #    (x1, y1, x2, y2, score)
-    all_boxes = [[[] for _ in xrange(num_images)]
-                 for _ in xrange(imdb.num_classes)]
+	"""Test a Fast R-CNN network on an image database."""
+	num_images = len(imdb.image_index)
+	# all detections are collected into:
+	#    all_boxes[cls][image] = N x 5 array of detections in
+	#    (x1, y1, x2, y2, score)
+	all_boxes = [[[] for _ in xrange(num_images)]
+			for _ in xrange(imdb.num_classes)]
 
-    output_dir = get_output_dir(imdb, net)
+	output_dir = get_output_dir(imdb, net)
 
-    # timers
-    _t = {'im_detect' : Timer(), 'misc' : Timer()}
+	# timers
+	_t = {'im_detect' : Timer(), 'misc' : Timer()}
 
-    if not cfg.TEST.HAS_RPN:
-        roidb = imdb.roidb
+	if not cfg.TEST.HAS_RPN:
+		roidb = imdb.roidb
 
-    for i in xrange(num_images):
-        # filter out any ground truth boxes
-        if cfg.TEST.HAS_RPN:
-            box_proposals = None
-        else:
-            # The roidb may contain ground-truth rois (for example, if the roidb
-            # comes from the training or val split). We only want to evaluate
-            # detection on the *non*-ground-truth rois. We select those the rois
-            # that have the gt_classes field set to 0, which means there's no
-            # ground truth.
-            box_proposals = roidb[i]['boxes'][roidb[i]['gt_classes'] == 0]
+	for i in xrange(num_images):
+		# filter out any ground truth boxes
+		if cfg.TEST.HAS_RPN:
+			box_proposals = None
+		else:
+			# The roidb may contain ground-truth rois (for example, if the roidb
+			# comes from the training or val split). We only want to evaluate
+			# detection on the *non*-ground-truth rois. We select those the rois
+			# that have the gt_classes field set to 0, which means there's no
+			# ground truth.
+			box_proposals = roidb[i]['boxes'][roidb[i]['gt_classes'] == 0]
 
-        im = cv2.imread(imdb.image_path_at(i))
-        _t['im_detect'].tic()
-        scores, boxes = im_detect(net, im, box_proposals)
-        _t['im_detect'].toc()
+		im = cv2.imread(imdb.image_path_at(i))
+		_t['im_detect'].tic()
+		scores, boxes = im_detect(net, im, box_proposals)
+		_t['im_detect'].toc()
 
-        _t['misc'].tic()
-        # skip j = 0, because it's the background class
-        for j in xrange(1, imdb.num_classes):
-            inds = np.where(scores[:, j] > thresh)[0]
-            cls_scores = scores[inds, j]
-            cls_boxes = boxes[inds, j*4:(j+1)*4]
-            cls_dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])) \
-                .astype(np.float32, copy=False)
-            keep = nms(cls_dets, cfg.TEST.NMS)
-            cls_dets = cls_dets[keep, :]
-            if vis:
-                vis_detections(im, imdb.classes[j], cls_dets)
-            all_boxes[j][i] = cls_dets
+		_t['misc'].tic()
+		# skip j = 0, because it's the background class
+		for j in xrange(1, imdb.num_classes):
+			print "Scores: "
+			inds = np.where(scores[:, j] > thresh)[0]
+			cls_scores = scores[inds, j]
+			cls_boxes = boxes[inds, j*4:(j+1)*4]
+			cls_dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])) \
+					.astype(np.float32, copy=False)
+			keep = nms(cls_dets, cfg.TEST.NMS)
+			cls_dets = cls_dets[keep, :]
+			if vis:
+				print "show image"
+				vis_detections(im, imdb.classes[j], cls_dets)
+			all_boxes[j][i] = cls_dets
 
-        # Limit to max_per_image detections *over all classes*
-        if max_per_image > 0:
-            image_scores = np.hstack([all_boxes[j][i][:, -1]
-                                      for j in xrange(1, imdb.num_classes)])
-            if len(image_scores) > max_per_image:
-                image_thresh = np.sort(image_scores)[-max_per_image]
-                for j in xrange(1, imdb.num_classes):
-                    keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
-                    all_boxes[j][i] = all_boxes[j][i][keep, :]
-        _t['misc'].toc()
+		# Limit to max_per_image detections *over all classes*
+		if max_per_image > 0:
+			image_scores = np.hstack([all_boxes[j][i][:, -1]
+				for j in xrange(1, imdb.num_classes)])
+			if len(image_scores) > max_per_image:
+				image_thresh = np.sort(image_scores)[-max_per_image]
+				for j in xrange(1, imdb.num_classes):
+					keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
+					all_boxes[j][i] = all_boxes[j][i][keep, :]
+		_t['misc'].toc()
 
-        print 'im_detect: {:d}/{:d} {:.3f}s {:.3f}s' \
-              .format(i + 1, num_images, _t['im_detect'].average_time,
-                      _t['misc'].average_time)
+		print 'im_detect: {:d}/{:d} {:.3f}s {:.3f}s' \
+				.format(i + 1, num_images, _t['im_detect'].average_time,
+						_t['misc'].average_time)
 
-    det_file = os.path.join(output_dir, 'detections.pkl')
-    with open(det_file, 'wb') as f:
-        cPickle.dump(all_boxes, f, cPickle.HIGHEST_PROTOCOL)
+	det_file = os.path.join(output_dir, 'detections.pkl')
+	with open(det_file, 'wb') as f:
+		cPickle.dump(all_boxes, f, cPickle.HIGHEST_PROTOCOL)
 
-    print 'Evaluating detections'
-    imdb.evaluate_detections(all_boxes, output_dir)
+	print 'Evaluating detections'
+	imdb.evaluate_detections(all_boxes, output_dir)
+
+def vis_detections_image_wise(im, class_name, dets, thresh=0.5):
+	"""Visual debugging of detections."""
+	import matplotlib.pyplot as plt
+	im = im[:, :, (2, 1, 0)]
+	idx = 0
+	for i in xrange(np.minimum(10, dets.shape[0])):
+		bbox = dets[i, :4]
+		score = dets[i, -1]
+		if score > thresh:
+			plt.cla()
+			plt.imshow(im)
+			plt.gca().add_patch(
+					plt.Rectangle((bbox[0], bbox[1]),
+						bbox[2] - bbox[0],
+						bbox[3] - bbox[1], fill=False,
+						edgecolor='g', linewidth=3)
+					)
+			plt.title('{}  {:.3f}'.format(class_name, score))
+			output_img = '/home/jihongju/Pictures/'+class_name+str(idx)+'.jpg'
+			plt.savefig(output_img)
+			idx = idx + 1
