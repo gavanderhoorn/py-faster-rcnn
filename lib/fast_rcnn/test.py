@@ -183,7 +183,7 @@ def im_detect(net, im, boxes=None):
 
     return scores, pred_boxes
 
-def vis_detections(im, classes, boxes_all, thresh=0):
+def vis_detections(im, classes, all_boxes, thresh=0):
 	"""Visual debugging of detections."""
 	print "Classes: "
 	print classes
@@ -193,13 +193,16 @@ def vis_detections(im, classes, boxes_all, thresh=0):
 	idx = 0
 	#for i in xrange(np.minimum(10, boxes.shape[0])):
 	for j in xrange(len(classes)):
-		boxes = boxes_all[j]
-	
+		boxes = all_boxes[j]
+		#print type(boxes)
+		
+		#print boxes
 		for i in xrange(len(boxes)):
 			bbox = boxes[i, :4]
-			score = boxes[i, -1]
-			#if score > thresh:
-			if True:
+			score = boxes[i, -1]# -1 indicates last column
+			thresh = 0.001
+			if score > thresh:
+			#if True:
 				print im.shape
 				#cv2.imshow('Image',im)
 				xmin = int(bbox[0])
@@ -312,11 +315,13 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 	"""Test a Fast R-CNN network on an image database."""
 	num_images = len(imdb.image_index)
 	# all detections are collected into:
-	#    all_boxes[cls][image] = N x 5 array of detections in
+	#    all_boxes[image][class] = N x 5 array of detections in
 	#    (x1, y1, x2, y2, score)
-	all_boxes = [[[] for _ in xrange(num_images)]
-			for _ in xrange(imdb.num_classes)]
+	#    N is the number of occurences os a certain class in an image
 
+	all_boxes = [[[] for _ in xrange(imdb.num_classes)]
+			for _ in xrange(num_images)]
+	#print len(all_boxes)
 	output_dir = get_output_dir(imdb, net)
 
 	# timers
@@ -325,9 +330,10 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 	if not cfg.TEST.HAS_RPN:
 		roidb = imdb.roidb
 
-	for i in xrange(num_images):
+	for i in range(num_images):
+		#print range(num_images)
 		# filter out any ground truth boxes
-		if cfg.TEST.HAS_RPN:
+		if cfg.TEST.HAS_RPN: # is generally TRUE (for apc 2016 testing), thus box_proposals is None (just like in the demo script)
 			box_proposals = None
 		else:
 			# The roidb may contain ground-truth rois (for example, if the roidb
@@ -337,52 +343,60 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 			# ground truth.
 			box_proposals = roidb[i]['boxes'][roidb[i]['gt_classes'] == 0]
 
-		print imdb.image_path_at(i)
+		#print imdb.image_path_at(i)
 		im = cv2.imread(imdb.image_path_at(i))
+		
+		# Detect all object classes and regress object bounds array of detections
 		_t['im_detect'].tic()
-		scores, boxes = im_detect(net, im, box_proposals)
+		scores, boxes = im_detect(net, im, box_proposals) 
+		# boxes: a N x (4*number_classes) ndarray where N is the number of proposals (300)
+		# scores: a N x number_classes ndarray each column represents a class
 		_t['im_detect'].toc()
+		print boxes.shape
+		print scores.shape
 
-		print "Scores"
-		print scores
+		#print "Scores"
+		#print scores
 
-		print "Boxes"
-		print boxes
+		#print "Boxes"
+		#print boxes
 
 		_t['misc'].tic()
 		# skip j = 0, because it's the background class
-		for j in xrange(1, imdb.num_classes):
-			print "Scores: "
+		for j in range(1, imdb.num_classes):
+			#print xrange(1, imdb.num_classes)
 			#inds = np.where(scores[:, j] > thresh)[0]
-			inds = np.where(scores[:, j] > 0)[0]
-			cls_scores = scores[inds, j]
-			cls_boxes = boxes[inds, j*4:(j+1)*4]
-			cls_dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])) \
-					.astype(np.float32, copy=False)
-			keep = nms(cls_dets, cfg.TEST.NMS)
+			#inds = np.where(scores[:, j] > 0.00000001)[0]
+			#print inds
+			## prefix cls_ stands for class
+			cls_scores = scores[:, j]
+			cls_boxes = boxes[:, j*4:(j+1)*4] # each class has 4 columns, select the correct columns
+			cls_dets = np.hstack((cls_boxes, 
+				cls_scores[:, np.newaxis])).astype(np.float32, copy=False)
+			keep = nms(cls_dets, cfg.TEST.NMS) # cfg.TEST.NMS is equal to the demo (0.3)
 			cls_dets = cls_dets[keep, :]
-			all_boxes[j][i] = cls_dets
-
-		print "i: "
+			print cls_dets.shape
+			all_boxes[i][j] = cls_dets
+		
+		print len(all_boxes)
 		print i
-
-		print "All boxes: "
-		print all_boxes[:][i+1]
-
 		if vis:
 			print "show image"
-			vis_detections(im, imdb.classes, all_boxes[:][i+1])
+			## list index out of bounds !!!!!!! 
+			print len(all_boxes)
+			#print all_boxes[i]
+			vis_detections(im, imdb.classes, all_boxes[i][:])
 
 		# Limit to max_per_image detections *over all classes*
-		if max_per_image > 0:
-			image_scores = np.hstack([all_boxes[j][i][:, -1]
-				for j in xrange(1, imdb.num_classes)])
-			if len(image_scores) > max_per_image:
-				image_thresh = np.sort(image_scores)[-max_per_image]
-				for j in xrange(1, imdb.num_classes):
-					keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
-					all_boxes[j][i] = all_boxes[j][i][keep, :]
-		_t['misc'].toc()
+#		if max_per_image > 0:
+#			image_scores = np.hstack([all_boxes[j][i][:, -1]
+#				for j in xrange(1, imdb.num_classes)])
+#			if len(image_scores) > max_per_image:
+#				image_thresh = np.sort(image_scores)[-max_per_image]
+#				for j in xrange(1, imdb.num_classes):
+#					keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
+#					all_boxes[j][i] = all_boxes[j][i][keep, :]
+#		_t['misc'].toc()
 
 		print 'im_detect: {:d}/{:d} {:.3f}s {:.3f}s' \
 				.format(i + 1, num_images, _t['im_detect'].average_time,
