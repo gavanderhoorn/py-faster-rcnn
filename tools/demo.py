@@ -26,14 +26,15 @@ import argparse
 import os
 
 CLASSES = ('__background__',
-           'aeroplane', 'bicycle', 'bird', 'boat',
-           'bottle', 'bus', 'car', 'cat', 'chair',
-           'cow', 'diningtable', 'dog', 'horse',
-           'motorbike', 'person', 'pottedplant',
-           'sheep', 'sofa', 'train', 'tvmonitor')
+#		'aeroplane', 'bicycle', 'bird', 'boat',
+#		'bottle', 'bus', 'car', 'cat', 'chair',
+#		'cow', 'diningtable', 'dog', 'horse',
+#		'motorbike', 'person', 'pottedplant',
+#		'sheep', 'sofa', 'train', 'tvmonitor')
+		   'book', 'bowl', 'ball', 'halter', 'dove')
 
 NETS = {'vgg16': ('VGG16',
-                  'VGG16_faster_rcnn_final.caffemodel'),
+                  'apc.caffemodel'),
         'zf': ('ZF',
                   'ZF_faster_rcnn_final.caffemodel')}
 
@@ -86,7 +87,7 @@ def demo(net, image_name):
            '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
     # Visualize detections for each class
-    CONF_THRESH = 0.8
+    CONF_THRESH = 0.2
     NMS_THRESH = 0.3
     for cls_ind, cls in enumerate(CLASSES[1:]):
         cls_ind += 1 # because we skipped background
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     args = parse_args()
 
     prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
-                            'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
+                            'faster_rcnn_end2end', 'test.prototxt')
     caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
                               NETS[args.demo_net][1])
 
@@ -143,7 +144,7 @@ if __name__ == '__main__':
         _, _= im_detect(net, im)
 
     #im_names = ['image1.jpg']
-    im_names = [f for f in os.listdir("data/demo/") if f.endswith(".png")]
+    im_names = [f for f in os.listdir("data/demo/") if f.endswith(".jpg")]
     for im_name in im_names:
         print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         print 'Demo for data/demo/{}'.format(im_name)
