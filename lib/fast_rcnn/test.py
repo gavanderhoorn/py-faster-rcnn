@@ -183,7 +183,7 @@ def im_detect(net, im, boxes=None):
 
     return scores, pred_boxes
 
-def vis_detections(im, classes, all_boxes, thresh=0):
+def vis_detections(im_path, im, classes, all_boxes, thresh=0):
 	"""Visual debugging of detections."""
 	print "Classes: "
 	print classes
@@ -216,9 +216,13 @@ def vis_detections(im, classes, all_boxes, thresh=0):
 				cv2.putText(image,classes[j],(xmin,ymin+50),\
 						cv2.FONT_HERSHEY_COMPLEX,\
 						2, (255, 255, 255), 2, cv2.CV_AA)
-				cv2.imshow('Detections',image)
-				# TODO set waitkey to 0, now cv2 waits for user input
-				cv2.waitKey(0)
+	im_name = os.path.basename(im_path)
+	im_write_path = os.path.join('/home/xgerrmann/DRapc2016/testOutput',im_name)
+	print im_write_path
+	cv2.imwrite(im_write_path, image);
+	#cv2.imshow('Detections',image)
+	# TODO set waitkey to 0, now cv2 waits for user input
+	#cv2.waitKey(0)
 
 def apply_nms(all_boxes, thresh):
     """Apply non-maximum suppression to all predicted boxes output by the
@@ -305,7 +309,7 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 			## list index out of bounds !!!!!!! 
 			print len(all_boxes)
 			#print all_boxes[i]
-			vis_detections(im, imdb.classes, all_boxes[i][:])
+			vis_detections(imdb.image_path_at(i),im, imdb.classes, all_boxes[i][:])
 
 		# Limit to max_per_image detections *over all classes*
 #		if max_per_image > 0:
