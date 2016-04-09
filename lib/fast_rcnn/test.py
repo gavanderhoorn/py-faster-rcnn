@@ -191,18 +191,16 @@ def vis_detections(im, classes, all_boxes, thresh=0):
 	image = (im[:, :, (2, 1, 0)]).copy()
 	print im.shape
 	idx = 0
-	#for i in xrange(np.minimum(10, boxes.shape[0])):
+	# for all classes
 	for j in xrange(len(classes)):
-		boxes = all_boxes[j]
-		#print type(boxes)
+		cls_boxes = all_boxes[j]
 		
-		#print boxes
-		for i in xrange(len(boxes)):
-			bbox = boxes[i, :4]
-			score = boxes[i, -1]# -1 indicates last column
+		# Display al boxes in image
+		for i in xrange(len(cls_boxes)):
+			bbox = cls_boxes[i, :4]		# select first for columns of row i
+			score = cls_boxes[i, -1]	# select last column of row i
 			thresh = 0.001
 			if score > thresh:
-			#if True:
 				print im.shape
 				#cv2.imshow('Image',im)
 				xmin = int(bbox[0])
@@ -214,6 +212,9 @@ def vis_detections(im, classes, all_boxes, thresh=0):
 				print ymin
 				print ymax
 				cv2.rectangle(image,(xmin, ymin),(xmax, ymax),(0,255,0), 2)
+				cv2.putText(image,'Class',(xmin,ymin+60),\
+						cv2.FONT_HERSHEY_COMPLEX,\
+						2, (255, 255, 255), 2, cv2.CV_AA)
 				cv2.imshow('Image',image)
 				cv2.waitKey(1)
 				idx = idx + 1
