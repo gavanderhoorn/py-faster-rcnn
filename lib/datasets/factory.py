@@ -26,8 +26,6 @@ for year in ['2016', 'test']:
         name = 'apc_{}_{}'.format(year, split)
         __sets[name] = (lambda split=split, year=year: apc(split, year))
 
-
-
 # Set up coco_2014_<split>
 for year in ['2014']:
     for split in ['train', 'val', 'minival', 'valminusminival']:

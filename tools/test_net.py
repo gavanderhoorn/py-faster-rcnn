@@ -52,6 +52,7 @@ def parse_args():
 
     if len(sys.argv) == 1:
         parser.print_help()
+        print "No arguments given, exit"
         sys.exit(1)
 
     args = parser.parse_args()
@@ -73,16 +74,23 @@ if __name__ == '__main__':
     print('Using config:')
     pprint.pprint(cfg)
 
-    while not os.path.exists(args.caffemodel) and args.wait:
-        print('Waiting for {} to exist...'.format(args.caffemodel))
-        time.sleep(10)
+    #while not os.path.exists(args.caffemodel) and args.wait:
+    #    print('Waiting for {} to exist...'.format(args.caffemodel))
+    #    time.sleep(10)
 
     caffe.set_mode_gpu()
     caffe.set_device(args.gpu_id)
+    print "TEST NET creation parameters:"
+    print "prototxt: "
+    print args.prototxt
+    print "caffemodel: "
+    print args.caffemodel
     net = caffe.Net(args.prototxt, args.caffemodel, caffe.TEST)
     net.name = os.path.splitext(os.path.basename(args.caffemodel))[0]
 
     imdb = get_imdb(args.imdb_name)
+    print "IMDB: "
+    print imdb
     imdb.competition_mode(args.comp_mode)
     if not cfg.TEST.HAS_RPN:
         imdb.set_proposal_method(cfg.TEST.PROPOSAL_METHOD)

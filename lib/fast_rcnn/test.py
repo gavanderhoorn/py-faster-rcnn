@@ -185,12 +185,8 @@ def im_detect(net, im, boxes=None):
 
 def vis_detections(im_path, im, classes, all_boxes, thresh=0):
 	"""Visual debugging of detections."""
-	print "Classes: "
-	print classes
 
 	image = (im[:, :, (2, 1, 0)]).copy()
-	print im.shape
-	idx = 0
 	# for all classes
 	for j in xrange(len(classes)):
 		cls_boxes = all_boxes[j]
@@ -201,24 +197,18 @@ def vis_detections(im_path, im, classes, all_boxes, thresh=0):
 			score = cls_boxes[i, -1]	# select last column of row i
 
 			# TODO Remove this artificial threshold 
-			thresh = 0.3
+			thresh = 0.05
 			if score > thresh:
-				print im.shape
 				xmin = int(bbox[0])
 				xmax = int(bbox[2])
 				ymin = int(bbox[1])
 				ymax = int(bbox[3])
-				print xmin
-				print xmax
-				print ymin
-				print ymax
 				cv2.rectangle(image,(xmin, ymin),(xmax, ymax),(255,255,255), 2)
 				cv2.putText(image,classes[j],(xmin,ymin+50),\
 						cv2.FONT_HERSHEY_COMPLEX,\
 						2, (255, 255, 255), 2, cv2.CV_AA)
 	im_name = os.path.basename(im_path)
 	im_write_path = os.path.join('/home/xgerrmann/DRapc2016/testOutput',im_name)
-	print im_write_path
 	cv2.imwrite(im_write_path, image);
 	#cv2.imshow('Detections',image)
 	# TODO set waitkey to 0, now cv2 waits for user input
@@ -280,17 +270,15 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 
 		#print imdb.image_path_at(i)
 		im = cv2.imread(imdb.image_path_at(i))
-		
+
 		# Detect all object classes and regress object bounds array of detections
 		_t['im_detect'].tic()
 		scores, boxes = im_detect(net, im, box_proposals) 
 		# boxes: a N x (4*number_classes) ndarray where N is the number of proposals (300)
 		# scores: a N x number_classes ndarray each column represents a class
 		_t['im_detect'].toc()
-		print boxes.shape
-		print scores.shape
 
-		_t['misc'].tic()
+
 		# skip j = 0, because it's the background class
 		for j in range(1, imdb.num_classes):
 			## prefix cls_ stands for class
@@ -302,13 +290,8 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 			cls_dets = cls_dets[keep, :]
 			all_boxes[i][j] = cls_dets
 		
-		print len(all_boxes)
-		print i
 		if vis:
 			print "show image"
-			## list index out of bounds !!!!!!! 
-			print len(all_boxes)
-			#print all_boxes[i]
 			vis_detections(imdb.image_path_at(i),im, imdb.classes, all_boxes[i][:])
 
 		# Limit to max_per_image detections *over all classes*
@@ -322,13 +305,12 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 #					all_boxes[j][i] = all_boxes[j][i][keep, :]
 #		_t['misc'].toc()
 
-		print 'im_detect: {:d}/{:d} {:.3f}s {:.3f}s' \
-				.format(i + 1, num_images, _t['im_detect'].average_time,
-						_t['misc'].average_time)
+		print 'im_detect: {:d}/{:d} {:.3f}s' \
+				.format(i + 1, num_images, _t['im_detect'].average_time)
 
 	det_file = os.path.join(output_dir, 'detections.pkl')
 	with open(det_file, 'wb') as f:
 		cPickle.dump(all_boxes, f, cPickle.HIGHEST_PROTOCOL)
 
-	print 'Evaluating detections'
+	print '\nEvaluating detections\n'
 	imdb.evaluate_detections(all_boxes, output_dir)

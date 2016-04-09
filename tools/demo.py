@@ -89,7 +89,8 @@ def demo(net, image_name):
     # Visualize detections for each class
     CONF_THRESH = 0.2
     NMS_THRESH = 0.3
-    for cls_ind, cls in enumerate(CLASSES[1:]):
+    for cls_ind, cls in enumerate(CLASSES[1:]): 
+    	print CLASSES[1:]
         cls_ind += 1 # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
         cls_scores = scores[:, cls_ind]
@@ -123,6 +124,9 @@ if __name__ == '__main__':
                             'faster_rcnn_end2end', 'test.prototxt')
     caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
                               NETS[args.demo_net][1])
+    
+    print prototxt
+    print caffemodel
 
     if not os.path.isfile(caffemodel):
         raise IOError(('{:s} not found.\nDid you run ./data/script/'
@@ -134,6 +138,12 @@ if __name__ == '__main__':
         caffe.set_mode_gpu()
         caffe.set_device(args.gpu_id)
         cfg.GPU_ID = args.gpu_id
+
+    print "NET creation parameters:"
+    print "prototxt: "
+    print prototxt
+    print "caffemodel: "
+    print caffemodel
     net = caffe.Net(prototxt, caffemodel, caffe.TEST)
 
     print '\n\nLoaded network {:s}'.format(caffemodel)
