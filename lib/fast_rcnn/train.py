@@ -109,12 +109,12 @@ class SolverWrapper(object):
                 print 'speed: {:.3f}s / iter'.format(timer.average_time)
 
             # logarithmically spaced snapshots if set in config
-            if (cfg.TRAIN.SNAPSHOT_LOG && self.solver.iter % list_snapshots[iter_snapshot] == 0):
+            if cfg.TRAIN.SNAPSHOT_LOG and self.solver.iter % list_snapshots[iter_snapshot] == 0:
                 last_snapshot_iter = self.solver.iter
                 model_paths.append(self.snapshot())
-                iter_snapshot ++
+                iter_snapshot += 1
             # otherwise linearly spaces snapshots as defined in config
-            else if (!cfg.SNAPSHOT_LOG && self.solver.iter % cfg.TRAIN.SNAPSHOT_ITERS == 0):
+            elif (not cfg.SNAPSHOT_LOG) and self.solver.iter % cfg.TRAIN.SNAPSHOT_ITERS == 0:
             	last_snapshot_iter = self.solver.iter
                 model_paths.append(self.snapshot())
 
