@@ -70,6 +70,12 @@ __C.TRAIN.BBOX_THRESH = 0.5
 # Iterations between snapshots
 __C.TRAIN.SNAPSHOT_ITERS = 10000
 
+# Iterations between snapshots automatically logarithmically spaced
+__C.TRAIN.SNAPSHOT_LOG = True
+
+# Number of snapshots to create
+__C.TRAIN.SNAPSHOT_NUM = 20
+
 # solver.prototxt specifies the snapshot path prefix, this adds an optional
 # infix to yield the path: <prefix>[_<infix>]_iters_XYZ.caffemodel
 __C.TRAIN.SNAPSHOT_INFIX = ''

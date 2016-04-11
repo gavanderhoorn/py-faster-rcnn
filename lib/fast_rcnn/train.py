@@ -95,6 +95,11 @@ class SolverWrapper(object):
         last_snapshot_iter = -1
         timer = Timer()
         model_paths = []
+        # create list with logarithmically spaced number of iterations
+        # this is needed for the snapshots
+        stop_power = np.log10(max_iters)
+        list_snapshots = np.logspace(0,stop_power,num=cfg.TRAIN.SNAPSHOTS_NUM,endpoint=True,dtype=np.int32)
+        iter_snapshot = 0
         while self.solver.iter < max_iters:
             # Make one SGD update
             timer.tic()
@@ -103,8 +108,14 @@ class SolverWrapper(object):
             if self.solver.iter % (10 * self.solver_param.display) == 0:
                 print 'speed: {:.3f}s / iter'.format(timer.average_time)
 
-            if self.solver.iter % cfg.TRAIN.SNAPSHOT_ITERS == 0:
+            # logarithmically spaced snapshots if set in config
+            if (cfg.TRAIN.SNAPSHOT_LOG && self.solver.iter % list_snapshots[iter_snapshot] == 0):
                 last_snapshot_iter = self.solver.iter
+                model_paths.append(self.snapshot())
+                iter_snapshot ++
+            # otherwise linearly spaces snapshots as defined in config
+            else if (!cfg.SNAPSHOT_LOG && self.solver.iter % cfg.TRAIN.SNAPSHOT_ITERS == 0):
+            	last_snapshot_iter = self.solver.iter
                 model_paths.append(self.snapshot())
 
         if last_snapshot_iter != self.solver.iter:
