@@ -98,7 +98,8 @@ class SolverWrapper(object):
         # create list with logarithmically spaced number of iterations
         # this is needed for the snapshots
         stop_power = np.log10(max_iters)
-        list_snapshots = np.logspace(0,stop_power,num=cfg.TRAIN.SNAPSHOTS_NUM,endpoint=True,dtype=np.int32)
+        list_snapshots = np.logspace(0,stop_power,num=cfg.TRAIN.SNAPSHOT_NUM,endpoint=True)
+        list_snapshots.astype(np.int32) # round to integers
         iter_snapshot = 0
         while self.solver.iter < max_iters:
             # Make one SGD update
@@ -114,7 +115,7 @@ class SolverWrapper(object):
                 model_paths.append(self.snapshot())
                 iter_snapshot += 1
             # otherwise linearly spaces snapshots as defined in config
-            elif (not cfg.SNAPSHOT_LOG) and self.solver.iter % cfg.TRAIN.SNAPSHOT_ITERS == 0:
+            elif (not cfg.TRAIN.SNAPSHOT_LOG) and self.solver.iter % cfg.TRAIN.SNAPSHOT_ITERS == 0:
             	last_snapshot_iter = self.solver.iter
                 model_paths.append(self.snapshot())
 
