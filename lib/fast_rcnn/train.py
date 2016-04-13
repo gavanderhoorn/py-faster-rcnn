@@ -99,7 +99,12 @@ class SolverWrapper(object):
         # this is needed for the snapshots
         stop_power = np.log10(max_iters)
         list_snapshots = np.logspace(0,stop_power,num=cfg.TRAIN.SNAPSHOT_NUM,endpoint=True)
+        print "SNAPSHOTLIST"
+        print list_snapshots
+        list_snapshots = round(list_snapshots,0)
         list_snapshots.astype(np.int32) # round to integers
+        print "SNAPSHOTLIST ROUNDED"
+        print list_snapshots
         iter_snapshot = 0
         while self.solver.iter < max_iters:
             # Make one SGD update
