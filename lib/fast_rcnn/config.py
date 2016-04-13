@@ -71,7 +71,7 @@ __C.TRAIN.BBOX_THRESH = 0.5
 __C.TRAIN.SNAPSHOT_ITERS = 10000
 
 # Iterations between snapshots automatically logarithmically spaced
-__C.TRAIN.SNAPSHOT_LOG = True
+__C.TRAIN.SNAPSHOT_LOG = False
 
 # Number of snapshots to create
 __C.TRAIN.SNAPSHOT_NUM = 20

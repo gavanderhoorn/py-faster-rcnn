@@ -209,6 +209,7 @@ def vis_detections(im_path, im, classes, all_boxes, thresh=0):
 						2, (255, 255, 255), 2, cv2.CV_AA)
 	im_name = os.path.basename(im_path)
 	im_write_path = os.path.join('/home/xgerrmann/DRapc2016/testOutput',im_name)
+	image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 	cv2.imwrite(im_write_path, image);
 	#cv2.imshow('Detections',image)
 	# TODO set waitkey to 0, now cv2 waits for user input
@@ -270,6 +271,7 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 
 		#print imdb.image_path_at(i)
 		im = cv2.imread(imdb.image_path_at(i))
+		im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
 		# Detect all object classes and regress object bounds array of detections
 		_t['im_detect'].tic()
