@@ -183,10 +183,12 @@ def im_detect(net, im, boxes=None):
 
     return scores, pred_boxes
 
-def vis_detections(im_path, im, classes, all_boxes, thresh=0):
+def vis_detections(im_path, im, classes, all_boxes, thresh=0.05):
 	"""Visual debugging of detections."""
 
-	image = (im[:, :, (2, 1, 0)]).copy()
+	# copy since the image should not be overwritten
+	image = im.copy()
+
 	# for all classes
 	for j in xrange(len(classes)):
 		cls_boxes = all_boxes[j]
@@ -196,8 +198,6 @@ def vis_detections(im_path, im, classes, all_boxes, thresh=0):
 			bbox = cls_boxes[i, :4]		# select first for columns of row i
 			score = cls_boxes[i, -1]	# select last column of row i
 
-			# TODO Remove this artificial threshold 
-			thresh = 0.05
 			if score > thresh:
 				xmin = int(bbox[0])
 				xmax = int(bbox[2])
@@ -207,13 +207,13 @@ def vis_detections(im_path, im, classes, all_boxes, thresh=0):
 				cv2.putText(image,classes[j],(xmin,ymin+50),\
 						cv2.FONT_HERSHEY_COMPLEX,\
 						2, (255, 255, 255), 2, cv2.CV_AA)
+
 	im_name = os.path.basename(im_path)
-	im_write_path = os.path.join('/home/xgerrmann/DRapc2016/testOutput',im_name)
-	image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+	im_write_path = os.path.join(cfg.DATA_DIR,'DRapc2016','testOutput',im_name)
+	image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+	#cv2.imshow('Detection',image)
+	#cv2.waitKey()
 	cv2.imwrite(im_write_path, image);
-	#cv2.imshow('Detections',image)
-	# TODO set waitkey to 0, now cv2 waits for user input
-	#cv2.waitKey(0)
 
 def apply_nms(all_boxes, thresh):
     """Apply non-maximum suppression to all predicted boxes output by the
@@ -272,6 +272,8 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 		#print imdb.image_path_at(i)
 		im = cv2.imread(imdb.image_path_at(i))
 		im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+		#cv2.imshow('colorcheck',im)
+		#cv2.waitKey()
 
 		# Detect all object classes and regress object bounds array of detections
 		_t['im_detect'].tic()
@@ -315,4 +317,6 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 		cPickle.dump(all_boxes, f, cPickle.HIGHEST_PROTOCOL)
 
 	print '\nEvaluating detections\n'
-	imdb.evaluate_detections(all_boxes, output_dir)
+	performance = imdb.evaluate_detections(all_boxes, output_dir)
+
+	return (imdb.classes, performance)
