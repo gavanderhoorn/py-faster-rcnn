@@ -53,6 +53,9 @@ def parse_args():
     parser.add_argument('--eval_iters', dest='eval_iters',
 						help='test multiple models to evaluate the effect of iterations',
 						default=False, type=bool)
+	parser.add_argument('--thresh',dest='thresh_detect',
+						help='Threshold for detection',
+						type=float,default=0.3)
 
     if len(sys.argv) == 1:
         parser.print_help()
@@ -134,7 +137,7 @@ if __name__ == '__main__':
 		model_path = os.path.join(args.caffe_model_path,model_file)
 		net = caffe.Net(args.prototxt, model_path, caffe.TEST)
 		net.name = os.path.splitext(os.path.basename(model_file))[0]
-		(classes, performance) = test_net(net, imdb, max_per_image=args.max_per_image, vis=args.vis)
+		(classes, performance) = test_net(net, imdb, max_per_image=args.max_per_image, thresh=thresh_detect, vis=args.vis)
 		performance_list += [performance]
 	
 	if(args.eval_iters == True):
