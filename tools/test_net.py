@@ -109,7 +109,7 @@ if __name__ == '__main__':
 	iterations = []
 	if(args.eval_iters == True):
 		# Get list of models in directory and SORT on the number of iterations (last part of filenames, preceded by '_') 
-		model_paths = filter(lambda f: os.path.isfile(os.path.join(args.caffe_model_path, f)), os.listdir(args.caffe_model_path))
+		model_paths = [os.path.join(args.caffe_model_path, f) for f in os.listdir(args.caffe_model_path) if f.endswith("caffemodel")]
 		model_paths = sorted(model_paths, key=get_iterations_from_filename)
 	else:
 		# Path of model is given by user, use this
@@ -133,10 +133,7 @@ if __name__ == '__main__':
 		print iterations[-1]
 		iterations_list += [iterations[-1]]
 		print iterations_list
-		model_path = os.path.join(args.caffe_model_path,model_file)
-		print "REAL path"
-		print model_path
-		net = caffe.Net(args.prototxt, model_path, caffe.TEST)
+		net = caffe.Net(args.prototxt, model_file, caffe.TEST)
 		net.name = os.path.splitext(os.path.basename(model_file))[0]
 		(classes, performance) = test_net(net, imdb, max_per_image=args.max_per_image, thresh=args.thresh_detect, vis=args.vis)
 		performance_list += [performance]
