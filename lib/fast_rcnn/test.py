@@ -210,7 +210,7 @@ def vis_detections(im_path, im, classes, all_boxes, thresh=0.05):
 
 	im_name = os.path.basename(im_path)
 	im_write_path = os.path.join(cfg.DATA_DIR,'DRapc2016','testOutput',im_name)
-	image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+	#image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 	#cv2.imshow('Detection',image)
 	#cv2.waitKey()
 	cv2.imwrite(im_write_path, image);
@@ -271,7 +271,7 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 
 		#print imdb.image_path_at(i)
 		im = cv2.imread(imdb.image_path_at(i))
-		im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+		#im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 		#cv2.imshow('colorcheck',im)
 		#cv2.waitKey()
 
