@@ -112,7 +112,7 @@ if __name__ == '__main__':
 		model_paths = sorted(model_paths, key=get_iterations_from_filename)
 	else:
 		# Path of model is given by user, use this
-		model_paths = args.caffe_model_path
+		model_paths = [args.caffe_model_path]
 
 	print "Model path(s)"
 	print model_paths
@@ -133,6 +133,8 @@ if __name__ == '__main__':
 		iterations_list += [iterations[-1]]
 		print iterations_list
 		model_path = os.path.join(args.caffe_model_path,model_file)
+		print "REAL path"
+		print model_path
 		net = caffe.Net(args.prototxt, model_path, caffe.TEST)
 		net.name = os.path.splitext(os.path.basename(model_file))[0]
 		(classes, performance) = test_net(net, imdb, max_per_image=args.max_per_image, thresh=args.thresh_detect, vis=args.vis)
