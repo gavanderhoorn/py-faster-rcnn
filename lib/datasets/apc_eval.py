@@ -98,7 +98,8 @@ def apc_eval(detpath,
 		lines = f.readlines()
 	imagenames = [x.strip() for x in lines]
 
-	if not os.path.isfile(cachefile):
+	# DISABLED CACHING OF ANNOTATIONS
+	if True:#not os.path.isfile(cachefile):
 		# load annots
 		recs = {}
 		for i, imagename in enumerate(imagenames):
@@ -107,9 +108,9 @@ def apc_eval(detpath,
 				print 'Reading annotation for {:d}/{:d}'.format(
 						i + 1, len(imagenames))
 				# save
-		print 'Saving cached annotations to {:s}'.format(cachefile)
-		with open(cachefile, 'w') as f:
-			cPickle.dump(recs, f)
+		#print 'Saving cached annotations to {:s}'.format(cachefile)
+		#with open(cachefile, 'w') as f:
+		#	cPickle.dump(recs, f)
 	else:
 		# load
 		with open(cachefile, 'r') as f:
