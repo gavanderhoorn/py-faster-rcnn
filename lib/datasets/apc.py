@@ -18,6 +18,9 @@ import subprocess
 import uuid
 from apc_eval import apc_eval
 from fast_rcnn.config import cfg
+from classes import classes, classes_short
+import operator
+import copy
 
 class apc(imdb):
 	def __init__(self, image_set, year, devkit_path=None):
@@ -27,10 +30,21 @@ class apc(imdb):
 		self._devkit_path = self._get_default_path() if devkit_path is None \
 				else devkit_path
 		self._data_path = os.path.join(self._devkit_path, 'APC' + self._year)
-		self._classes = ('__background__', # always index 0
-				'book','bowl','ball','halter','dove'	
-				)
-		self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
+
+		# set class labels
+		_classes = copy.deepcopy(classes)
+		_classes["__background__"] = 0
+		self._classes = [k for k, v in sorted(_classes.items(), key=operator.itemgetter(1))]
+
+		# set short labels
+		_classes_short = copy.deepcopy(classes_short)
+		_classes_short["__background__"] = 0
+		self._classes_short = [k for k, v in sorted(_classes_short.items(), key=operator.itemgetter(1))]
+
+		# set class to indices dict
+		self._class_to_ind = _classes
+		print self._classes
+
 		self._image_ext = '.jpg'
 		self._image_index = self._load_image_set_index()
 		# Default to roidb handler
@@ -278,6 +292,11 @@ class apc(imdb):
 			rec, prec, ap = apc_eval(
 					filename, annopath, imagesetfile, \
 							cls, cachedir, ovthresh=0.5)
+
+			# TODO: Remove this! This should skip not yet learned objects
+			if ap == 0:
+				continue
+
 			aps += [ap]
 			print('AP for {} = {:.4f}'.format(cls, ap))
 			with open(os.path.join(output_dir, cls + '_pr.pkl'), 'w') as f:

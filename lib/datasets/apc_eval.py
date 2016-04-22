@@ -189,7 +189,7 @@ def apc_eval(detpath,
 	if npos >0:
 		rec = tp / float(npos)
 	else:
-		rec = 1
+		rec = [1]
 	
 	# avoid divide by zero in case the first detection matches a difficult
 	# ground truth
