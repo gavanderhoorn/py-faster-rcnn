@@ -20,6 +20,7 @@ class imdb(object):
         self._name = name
         self._num_classes = 0
         self._classes = []
+        self._classes_short = []
         self._image_index = []
         self._obj_proposer = 'selective_search'
         self._roidb = None
@@ -38,6 +39,10 @@ class imdb(object):
     @property
     def classes(self):
         return self._classes
+
+    @property
+    def classes_short(self):
+        return self._classes_short
 
     @property
     def image_index(self):

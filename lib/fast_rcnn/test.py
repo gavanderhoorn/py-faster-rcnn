@@ -204,7 +204,7 @@ def vis_detections(im_path, im, classes, all_boxes, thresh=0.05):
 				ymin = int(bbox[1])
 				ymax = int(bbox[3])
 				cv2.rectangle(image,(xmin, ymin),(xmax, ymax),(255,255,255), 2)
-				cv2.putText(image,classes[j],(xmin,ymin+50),\
+				cv2.putText(image,classes[j] + " " + str(score),(xmin,ymin+50),\
 						cv2.FONT_HERSHEY_COMPLEX,\
 						2, (255, 255, 255), 2, cv2.CV_AA)
 
@@ -296,7 +296,7 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 		
 		if vis:
 			print "show image"
-			vis_detections(imdb.image_path_at(i),im, imdb.classes, all_boxes[i][:])
+			vis_detections(imdb.image_path_at(i),im, imdb.classes_short, all_boxes[i][:], thresh)
 
 		# Limit to max_per_image detections *over all classes*
 #		if max_per_image > 0:
