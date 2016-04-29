@@ -136,7 +136,7 @@ if __name__ == '__main__':
 		net = caffe.Net(args.prototxt, model_file, caffe.TEST)
 		net.name = os.path.splitext(os.path.basename(model_file))[0]
 		(classes, performance) = test_net(net, imdb, max_per_image=args.max_per_image, thresh=args.thresh_detect, vis=args.vis)
-		performance_list += [performance]
+		performance_list += [performance['aps']]
 	
 	if(args.eval_iters == True):
 		pass

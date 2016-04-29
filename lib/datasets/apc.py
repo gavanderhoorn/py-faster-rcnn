@@ -17,6 +17,7 @@ import cPickle
 import subprocess
 import uuid
 from apc_eval import apc_eval
+from apc_evalv2 import apc_evalv2
 from fast_rcnn.config import cfg
 from classes import classes, classes_short
 import operator
@@ -75,7 +76,7 @@ class apc(imdb):
 		"""
 		Construct an image path from the image's "index" identifier.
 		"""
-		image_path = os.path.join(self._data_path, 'JPEGImages',
+		image_path = os.path.join(self._data_path, 'Images',
 								  index + self._image_ext)
 		assert os.path.exists(image_path), \
 				'Path does not exist: {}'.format(image_path)
@@ -251,8 +252,9 @@ class apc(imdb):
 
 	def _write_apc_results_file(self, all_boxes):
 		for cls_ind, cls in enumerate(self.classes):
-			if cls == '__background__':
-				continue
+			# Not skip background
+			#if cls == '__background__':
+			#	continue
 			print 'Writing {} APC results file'.format(cls)
 			filename = self._get_apc_results_file_template().format(cls)
 			with open(filename, 'wt') as f:
@@ -280,35 +282,59 @@ class apc(imdb):
 			'Main',
 			self._image_set + '.txt')
 		cachedir = os.path.join(self._devkit_path, 'annotations_cache')
-		aps = []
+		performance = {}
+		performance['aps'] = []
+		performance['recs'] = []
+		performance['precs'] = []
+		performance['prauc'] = []
+		performance['tprs'] = []
+		performance['fprs'] = []
+		performance['rocauc'] = []
 		print "\n"
 		if not os.path.isdir(output_dir):
 			os.mkdir(output_dir)
 		for i, cls in enumerate(self._classes):
+			filename = self._get_apc_results_file_template().format(cls)
 			# skip background class
 			if cls == '__background__':
 				continue
-			filename = self._get_apc_results_file_template().format(cls)
-			rec, prec, ap = apc_eval(
+			# Deprecated AP
+			_, _, ap = apc_eval(
 					filename, annopath, imagesetfile, \
 							cls, cachedir, ovthresh=0.5)
 
 			# TODO: Remove this! This should skip not yet learned objects
 			if ap == 0:
-				continue
+				tpr, fpr, rocauc, rec, prec, prauc = [0]*20, [0]*20, 0, [0]*20, [0]*20, 0
+			# Preferred PR measure and ROC measure
+			else:
+				rec, prec, prauc, tpr, fpr, rocauc = apc_evalv2(
+						filename, annopath, imagesetfile, \
+								cls, cachedir, ovthresh=0.5)
 
-			aps += [ap]
+			performance['aps'] += [ap]
+			performance['tprs'] += [tpr]
+			performance['fprs'] += [fpr]
+			performance['rocauc'] += [rocauc]
+			performance['recs'] += [rec]
+			performance['precs'] += [prec]
+			performance['prauc'] += [prauc]
+
+
 			print('AP for {} = {:.4f}'.format(cls, ap))
+			print('PR curve AUC for {:s} = {}'.format(cls, prauc))
+			print('ROC curve AUC for {:s} = {}'.format(cls, rocauc))
 			with open(os.path.join(output_dir, cls + '_pr.pkl'), 'w') as f:
-				cPickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
-		print('\nMean AP = {:.4f}'.format(np.mean(aps)))
+				cPickle.dump({'ap': ap, 'rec': rec, 'prec': prec, 'prauc': prauc, \
+					'tpr': tpr, 'fpr': fpr, 'rocauc': rocauc}, f)
+		print('\nMean AP = {:.4f}'.format(np.mean(performance['aps'])))
 		print('~~~~~~~~')
 		print('Results:')
-		for ap in aps:
+		for ap in performance['aps']:
 			print('{:.3f}'.format(ap))
-		print('{:.3f}'.format(np.mean(aps)))
+		print('{:.3f}'.format(np.mean(performance['aps'])))
 		print('~~~~~~~~')
-		return aps
+		return performance
 
 	def evaluate_detections(self, all_boxes, output_dir):
 		print "\n"
@@ -333,6 +359,7 @@ class apc(imdb):
 
 if __name__ == '__main__':
 	from datasets.apc import apc
+	d = apc('trainval', '2016')
 	d = apc('trainval', '2016')
 	res = d.roidb
 	from IPython import embed; embed()

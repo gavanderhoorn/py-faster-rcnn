@@ -79,11 +79,11 @@ def ROC_Vis(classes, tprss, fprss):
 		fig, axs = plt.subplots(num_vertical, num_horizontal, figsize=(15, 6), facecolor='w', edgecolor='k')
 		fig.subplots_adjust(hspace = .5, wspace=.5)
 
-		axs = axs.ravel()	
+		axs = axs.ravel()
 		for i in xrange(0,num_figs):
 			fpr = np.concatenate(([1.], fprss[i,:], [0.]))
 			tpr = np.concatenate(([1.], tprss[i,:], [0.]))
-			axs[i].plot(fpr, tpr, 'bo-')
+			axs[i].plot(fpr, tpr, 'bo-', linewidth=5)
 			axs[i].set_title(classes[i+1])
 			axs[i].set_xlabel('FP rate')
 			axs[i].set_xlim(0.,1.)
@@ -92,7 +92,7 @@ def ROC_Vis(classes, tprss, fprss):
 		plt.show()
 			
 	else:
-		print 'Error: Number of classses {} are not consistent with number of classes in tp array and fp arrays {}'.format(len(classes)-1,tprss.shape[1])
+		print 'Error: Number of classses {} are not consistent with number of classes in tp array and fp arrays {}'.format(len(classes)-1,tprss.shape[0])
 
 def PR_Vis(classes, recss, precss):
 	recss = np.array(recss)
@@ -108,7 +108,7 @@ def PR_Vis(classes, recss, precss):
 		for i in xrange(0,num_figs):
 			rec = np.concatenate(([1.], recss[i,:], [0.]))
 			prec = np.concatenate(([0.], precss[i,:], [1.]))
-			axs[i].plot(rec, prec, 'b-')
+			axs[i].plot(rec, prec, 'b-', linewidth=5)
 			axs[i].set_title(classes[i+1])
 			axs[i].set_xlabel('Recall')
 			axs[i].set_xlim(0.,1.)
@@ -117,7 +117,7 @@ def PR_Vis(classes, recss, precss):
 		plt.show()
 			
 	else:
-		print 'Error: Number of classses {} are not consistent with number of classes in recall array and precision arrays {}'.format(len(classes)-1,recss.shape[1])
+		print 'Error: Number of classses {} are not consistent with number of classes in recall array and precision arrays {}'.format(len(classes)-1,recss.shape[0])
 
 
 if __name__ == '__main__':

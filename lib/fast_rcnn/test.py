@@ -61,7 +61,7 @@ def _get_rois_blob(im_rois, im_scale_factors):
     Arguments:
         im_rois (ndarray): R x 4 matrix of RoIs in original image coordinates
         im_scale_factors (list): scale factors as returned by _get_image_blob
-
+?
     Returns:
         blob (ndarray): R x 5 matrix of RoIs in the image pyramid
     """
@@ -283,8 +283,9 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 		_t['im_detect'].toc()
 
 
-		# skip j = 0, because it's the background class
-		for j in range(1, imdb.num_classes):
+		# start from j = 1 to preclude the background class
+		# background class included here to calculate true negative
+		for j in range(0, imdb.num_classes):
 			## prefix cls_ stands for class
 			cls_scores = scores[:, j]
 			cls_boxes = boxes[:, j*4:(j+1)*4] # each class has 4 columns, select the correct columns
@@ -300,14 +301,22 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 
 		# Limit to max_per_image detections *over all classes*
 #		if max_per_image > 0:
-#			image_scores = np.hstack([all_boxes[j][i][:, -1]
+#			image_scores = np.hstack([all_boxes[i][j][:, -1]
 #				for j in xrange(1, imdb.num_classes)])
 #			if len(image_scores) > max_per_image:
 #				image_thresh = np.sort(image_scores)[-max_per_image]
 #				for j in xrange(1, imdb.num_classes):
-#					keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
-#					all_boxes[j][i] = all_boxes[j][i][keep, :]
-#		_t['misc'].toc()
+#					keep = np.where(all_boxes[i][j][:, -1] >= image_thresh)[0]
+#					all_boxes[i][j] = all_boxes[i][j][keep, :]
+
+		# Apply threshold on the proposals
+		image_scores = np.hstack([all_boxes[i][j][:, -1] for j in xrange(1, imdb.num_classes)])
+		if len(image_scores) > 0:
+			for j in xrange(0, imdb.num_classes):						#TODO here we include class '__background__'
+				keep = np.where(all_boxes[i][j][:, -1] >= thresh)[0]	#TODO score threshhold for each class
+				all_boxes[i][j] = all_boxes[i][j][keep, :]
+
+		_t['misc'].toc()
 
 		print 'im_detect: {:d}/{:d} {:.3f}s' \
 				.format(i + 1, num_images, _t['im_detect'].average_time)
@@ -318,5 +327,7 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 
 	print '\nEvaluating detections\n'
 	performance = imdb.evaluate_detections(all_boxes, output_dir)
+
+
 
 	return (imdb.classes, performance)
