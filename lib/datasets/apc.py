@@ -320,10 +320,10 @@ class apc(imdb):
 			performance['precs'] += [prec]
 			performance['prauc'] += [prauc]
 
-
-			print('AP for {} = {:.4f}'.format(cls, ap))
-			print('PR curve AUC for {:s} = {}'.format(cls, prauc))
-			print('ROC curve AUC for {:s} = {}'.format(cls, rocauc))
+			if ap != 0: #TODO For DEBUG, remove this
+				print('AP for {} = {:.4f}'.format(cls, ap))
+				print('PR curve AUC for {:s} = {}'.format(cls, prauc))
+				print('ROC curve AUC for {:s} = {}'.format(cls, rocauc))
 			with open(os.path.join(output_dir, cls + '_pr.pkl'), 'w') as f:
 				cPickle.dump({'ap': ap, 'rec': rec, 'prec': prec, 'prauc': prauc, \
 					'tpr': tpr, 'fpr': fpr, 'rocauc': rocauc}, f)

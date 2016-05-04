@@ -284,8 +284,8 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 
 
 		# start from j = 1 to preclude the background class
-		# background class included here to calculate true negative
-		for j in range(0, imdb.num_classes):
+		# if background class is included here, it is for calculating true negative
+		for j in range(1, imdb.num_classes):
 			## prefix cls_ stands for class
 			cls_scores = scores[:, j]
 			cls_boxes = boxes[:, j*4:(j+1)*4] # each class has 4 columns, select the correct columns
@@ -312,7 +312,7 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 		# Apply threshold on the proposals
 		image_scores = np.hstack([all_boxes[i][j][:, -1] for j in xrange(1, imdb.num_classes)])
 		if len(image_scores) > 0:
-			for j in xrange(0, imdb.num_classes):						#TODO here we include class '__background__'
+			for j in xrange(1, imdb.num_classes):						#TODO here we include class '__background__'
 				keep = np.where(all_boxes[i][j][:, -1] >= thresh)[0]	#TODO score threshhold for each class
 				all_boxes[i][j] = all_boxes[i][j][keep, :]
 

@@ -11,7 +11,7 @@
 
 import _init_paths
 from fast_rcnn.test import test_net
-from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list
+from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
 from datasets.factory import get_imdb
 from test_iters import make_figure
 import caffe
@@ -22,6 +22,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 from sklearn.metrics import auc
+from classes import inverse_classes, inverse_classes_short
+import cPickle
+import getpass
+USER = getpass.getuser()
 
 def parse_args():
 	"""
@@ -66,9 +70,6 @@ def parse_args():
 	args = parser.parse_args()
 	return args
 
-def AUC_Calculator(classes, tprss, fprss):
-	pass
-
 def ROC_Vis(classes, tprss, fprss):
 	tprss = np.array(tprss)
 	fprss = np.array(fprss)
@@ -76,21 +77,30 @@ def ROC_Vis(classes, tprss, fprss):
 		num_figs = len(classes) - 1
 		num_horizontal = 5
 		num_vertical = int(math.ceil(num_figs/float(num_horizontal)))
-		fig, axs = plt.subplots(num_vertical, num_horizontal, figsize=(15, 6), facecolor='w', edgecolor='k')
+		fig, axs = plt.subplots(num_vertical, num_horizontal, figsize=(15, 24), facecolor='w', edgecolor='k')
 		fig.subplots_adjust(hspace = .5, wspace=.5)
+		optimal_idc, optimal_threshs = determine_threshold(classes, fprss, tprss, mode='roc')
 
 		axs = axs.ravel()
 		for i in xrange(0,num_figs):
 			fpr = np.concatenate(([1.], fprss[i,:], [0.]))
 			tpr = np.concatenate(([1.], tprss[i,:], [0.]))
-			axs[i].plot(fpr, tpr, 'bo-', linewidth=5)
-			axs[i].set_title(classes[i+1])
+			axs[i].plot(fpr, tpr, 'b-', linewidth=3)
+			axs[i].set_title(inverse_classes_short[i+1])
 			axs[i].set_xlabel('FP rate')
 			axs[i].set_xlim(0.,1.)
 			axs[i].set_ylabel('TP rate')
 			axs[i].set_ylim(0.,1.)
-		plt.show()
-			
+			axs[i].spines['top'].set_color('none')
+			axs[i].spines['right'].set_color('none')
+			axs[i].xaxis.set_ticks_position('bottom')
+			axs[i].yaxis.set_ticks_position('left')
+			# highlight best rec-prec pair
+			cls = classes[i+1]
+			axs[i].scatter(fprss[i, optimal_idc[cls]],tprss[i, optimal_idc[cls]], s=100, c='r', label='optimal thresh: {}'.format(optimal_threshs[cls]))
+			axs[i].legend(loc='lower right', numpoints=1, fontsize=8)
+
+		plt.savefig('/home/{}/workspace/ROC.png'.format(USER))
 	else:
 		print 'Error: Number of classses {} are not consistent with number of classes in tp array and fp arrays {}'.format(len(classes)-1,tprss.shape[0])
 
@@ -101,26 +111,89 @@ def PR_Vis(classes, recss, precss):
 		num_figs = len(classes) - 1
 		num_horizontal = 5
 		num_vertical = int(math.ceil(num_figs/float(num_horizontal)))
-		fig, axs = plt.subplots(num_vertical, num_horizontal, figsize=(15, 6), facecolor='w', edgecolor='k')
-		fig.subplots_adjust(hspace = .5, wspace=.5)
+		fig, axs = plt.subplots(num_vertical, num_horizontal, figsize=(15, 24), facecolor='w', edgecolor='k')
+		fig.subplots_adjust(hspace = .5, wspace = .5)
+		optimal_idc, optimal_threshs = determine_threshold(classes, recss, precss, mode='pr')
 
-		axs = axs.ravel()	
+		axs = axs.ravel()
 		for i in xrange(0,num_figs):
 			rec = np.concatenate(([1.], recss[i,:], [0.]))
 			prec = np.concatenate(([0.], precss[i,:], [1.]))
-			axs[i].plot(rec, prec, 'b-', linewidth=5)
-			axs[i].set_title(classes[i+1])
+			axs[i].plot(rec, prec, 'b-', linewidth=3)
+			axs[i].set_title(inverse_classes_short[i+1])
 			axs[i].set_xlabel('Recall')
 			axs[i].set_xlim(0.,1.)
 			axs[i].set_ylabel('Precision')
 			axs[i].set_ylim(0.,1.)
-		plt.show()
-			
+			axs[i].spines['top'].set_color('none')
+			axs[i].spines['right'].set_color('none')
+			axs[i].xaxis.set_ticks_position('bottom')
+			axs[i].yaxis.set_ticks_position('left')
+			# highlight best rec-prec pair
+			cls = classes[i+1]
+			ot = axs[i].scatter(recss[i, optimal_idc[cls]],precss[i, optimal_idc[cls]], s=100, c='r', label='optimal thresh: {}'.format(optimal_threshs[cls]))
+			axs[i].legend(loc='lower right', numpoints=1, fontsize=8)
+		plt.savefig('/home/{}/workspace/PR.png'.format(USER))
 	else:
 		print 'Error: Number of classses {} are not consistent with number of classes in recall array and precision arrays {}'.format(len(classes)-1,recss.shape[0])
 
+def determine_threshold(classes, xss, yss, mode='pr'):
+	xss = np.array(xss)
+	yss = np.array(yss)
+	thresholds = np.arange(0.,1., 0.05)
+	idc = {}
+	optimal_threshs = {}
+	if mode == 'pr':
+		"criterion: maximum f1_score"
+		scores = 2 * (yss * xss) / \
+				np.maximum((yss + xss), np.finfo(np.float64).eps)
+
+	else:
+		"criterion: maximum Youden index"
+		scores = yss - xss
+	# pick median if there are multiple thresholds
+	for i in xrange(0, len(classes)-1):
+		cls = classes[i+1]
+		if np.sum(scores[i,:]) == 0:
+			idx = 0.
+			idc[cls] = idx
+			optimal_threshs[cls] = thresholds[idx]
+		else:
+			#print (mode, cls, scores[i,:])
+			thresh_ids = np.where(scores[i,:] == np.max(scores[i,:]))
+			idx = thresh_ids[0][len(thresh_ids[0]) / 2]
+			idc[cls] = idx
+			optimal_threshs[cls] = thresholds[idx]
+			print '{} Threshold for class {} is {}'.format(mode, cls, thresholds[idx])
+	return idc, optimal_threshs
+
+def readCache(pkl_dir = 'output'):
+	performance = {}
+	performance['aps'] = []
+	performance['recs'] = []
+	performance['precs'] = []
+	performance['prauc'] = []
+	performance['tprs'] = []
+	performance['fprs'] = []
+	performance['rocauc'] = []
+	classes = ['__background__']
+	for i,cls in inverse_classes.items():
+		classes.append(cls)
+		with open (os.path.join(pkl_dir, cls + '_pr.pkl'), 'rb') as f:
+			obj = cPickle.load(f)
+			performance['aps']= [obj['ap']]
+			performance['tprs'] += [obj['tpr']]
+			performance['fprs'] += [obj['fpr']]
+			performance['rocauc'] += [obj['rocauc']]
+			performance['recs'] += [obj['rec']]
+			performance['precs'] += [obj['prec']]
+			performance['prauc'] += [obj['prauc']]
+	return (classes, performance)
+
+
 
 if __name__ == '__main__':
+	DEBUG = 0
 	args = parse_args()
 
 	print('Called with args:')
@@ -144,7 +217,7 @@ if __name__ == '__main__':
 	caffe.set_device(args.gpu_id)
 	print "TEST NET creation parameters:"
 	print "prototxt: "
-	print args.prototxt
+#	print args.prototxt
 
 	imdb = get_imdb(args.imdb_name)
 	print "IMDB: "
@@ -154,18 +227,24 @@ if __name__ == '__main__':
 		imdb.set_proposal_method(cfg.TEST.PROPOSAL_METHOD)
 
 	print "Model path:"
-	print args.caffemodel
+#	print args.caffemodel
 
 	# do one detection and save the detections.pkl
 
 	net = caffe.Net(args.prototxt, args.caffemodel, caffe.TEST)
 	net.name = os.path.splitext(os.path.basename(args.caffemodel))[0]
-	(classes, performance) = test_net(net, imdb, max_per_image=args.max_per_image, thresh=0.)
+
+	output_dir = get_output_dir(imdb, net)
+	if DEBUG:
+		(classes, performance) = readCache(output_dir)
+	else:
+		(classes, performance) = test_net(net, imdb, max_per_image=args.max_per_image, thresh=0.)
 
 	recss = performance['recs']
 	precss = performance['precs']
 	tprss = performance['tprs']
 	fprss = performance['fprs']
+
 
 	ROC_Vis(classes, tprss, fprss)
 	PR_Vis(classes, recss, precss)	
