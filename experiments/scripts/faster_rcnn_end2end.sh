@@ -39,11 +39,11 @@ case $DATASET in
     ITERS=490000
     ;;
   apc)
-  	TRAIN_IMDB="apc_2016_trainval"
-	TEST_IMDB="apc_2016_test"
-	PT_DIR="apc"
-	ITERS=5000
-	;;
+    TRAIN_IMDB="apc_2016_trainval"
+    TEST_IMDB="apc_2016_test"
+    PT_DIR="apc"
+    ITERS=80000
+    ;;
   *)
     echo "No dataset given"
     exit
