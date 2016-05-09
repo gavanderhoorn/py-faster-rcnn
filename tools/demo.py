@@ -62,10 +62,10 @@ def vis_detections(im, class_name, dets, thresh=0.5):
 #	ax.imshow(im, aspect='equal')
 	for i in inds:
 		bbox = dets[i, :4]
-		print bbox
 		score = dets[i, -1]
+		print bbox, score
 		cv2.rectangle(image, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 3)
-		cv2.putText(image, class_name + " " + str(score), (int(bbox[0] + 10), int(bbox[1] + 30)), cv2.FONT_HERSHEY_PLAIN, 2.0, (0, 0, 255), 2)
+		cv2.putText(image, class_name + " " + str(score), (int(bbox[0] + 10), int(bbox[1] + 30)), cv2.FONT_HERSHEY_PLAIN, 2.0, (255, 255, 0), 2)
 
 	return image
 
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 		_, _= im_detect(net, im)
 
 	#im_names = ['image1.jpg']
-	im_names = [f for f in os.listdir("data/demo/") if f.endswith(".png")]
+	im_names = [f for f in os.listdir("data/demo/") if f.endswith(".jpg") or f.endswith(".png")]
 	for im_name in im_names:
 		print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 		print 'Demo for data/demo/{}'.format(im_name)
