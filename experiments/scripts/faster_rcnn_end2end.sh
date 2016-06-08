@@ -44,6 +44,18 @@ case $DATASET in
     PT_DIR="apc"
     ITERS=80000
     ;;
+  apcbin)
+    TRAIN_IMDB="apc_bin_trainval"
+    TEST_IMDB="apc_bin_test"
+    PT_DIR="apc"
+    ITERS=20000
+    ;;
+  apctote)
+    TRAIN_IMDB="apc_tote_trainval"
+    TEST_IMDB="apc_tote_test"
+    PT_DIR="apc"
+    ITERS=20000
+    ;;
   *)
     echo "No dataset given"
     exit

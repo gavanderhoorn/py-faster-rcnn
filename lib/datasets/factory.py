@@ -21,7 +21,7 @@ for year in ['2007', '2012']:
         __sets[name] = (lambda split=split, year=year: pascal_voc(split, year))
 
 # Set up apc_2016_<split>
-for year in ['2016', 'test']:
+for year in ['2016', 'bin', 'tote']:
     for split in ['train', 'val', 'trainval', 'test', 'validated']:
         name = 'apc_{}_{}'.format(year, split)
         __sets[name] = (lambda split=split, year=year: apc(split, year))

@@ -25,7 +25,15 @@ EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
 
 case $DATASET in
   apc)
-	TEST_IMDB="apc_test_validated"
+	TEST_IMDB="apc_2016_test"
+	PT_DIR="apc"
+	;;
+  apcbin)
+	TEST_IMDB="apc_bin_test"
+	PT_DIR="apc"
+	;;
+  apctote)
+	TEST_IMDB="apc_tote_test"
 	PT_DIR="apc"
 	;;
   *)
