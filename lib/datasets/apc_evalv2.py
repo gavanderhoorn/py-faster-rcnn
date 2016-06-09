@@ -1,7 +1,7 @@
 # --------------------------------------------------------
 # Fast/er R-CNN
 # Licensed under The MIT License [see LICENSE for details]
-# Written by Bharath Hariharan
+# Modified from PASCAL VOC evaluation code written by Bharath Hariharan
 # --------------------------------------------------------
 
 import xml.etree.ElementTree as ET
@@ -9,6 +9,8 @@ import os
 import cPickle
 import numpy as np
 import copy
+import itertools
+import operator
 from sklearn.metrics import auc
 
 # 20 thresholds varying from 0 to 0.95 with interval 0.05
@@ -77,7 +79,7 @@ def apc_evalv2(detpath,
 		classname,
 		cachedir,
 		ovthresh=0.5):
-	"""rec, prec, ap = acp_evalv2(detpath,
+	"""rec, prec, prauc, tpr, fpr, rocauc = acp_evalv2(detpath,
 								annopath,
 								imagesetfile,
 								classname,
@@ -185,7 +187,7 @@ def apc_evalv2(detpath,
 				BBGT_neg = R_neg['bbox'].astype(float)
 				if BBGT_neg.size > 0:
 					ovmax_neg, _ = maxOverlaps(BBGT_neg, bb)
-				#TODO what if target object and untarget object are overlaped?
+				#TODO what if target object and untarget object are overlaped? IGNORE
 				if ovmax_neg > ovthresh and ovmax < ovthresh:
 					tn -= 1
 
@@ -223,20 +225,20 @@ def apc_evalv2(detpath,
 
 
 
-# Deprecated performance calculation per image
-def apc_evalv2_bak(detpath,
+def apc_evalv3(detpath,
 		annopath,
 		imagesetfile,
 		classname,
 		cachedir,
 		ovthresh=0.5):
-	"""rec, prec, ap = acp_evalv2(detpath,
-								annopath,
-								imagesetfile,
-								classname,
-								[ovthresh])
+	"""tp, fp, tn, fn = acp_evalv3(detpath,
+						annopath,
+						imagesetfile,
+						classname,
+						cachedir,
+						[ovthresh])
 
-	Top level function that does a PASCAL VOC like evaluation per bbox.
+	Top level function that evaluates detection accuracy per class.
 
 	detpath: Path to detections
 		detpath.format(classname) should produce the detection results file.
@@ -265,21 +267,22 @@ def apc_evalv2_bak(detpath,
 			print 'Reading annotation for {:d}/{:d}'.format(
 					i + 1, len(imagenames))
 
-
-	### Calculate rec, prec, and auc for pr curve fn by comparing BBGT amd BB detected per bbox
 	# extract gt objects for this class
 	class_recs = {}
 	npos = 0
-	negative_gt = [] # negative ground truth per image
+	neg_imgs = []
 	for imagename in imagenames:
+		# TODO select obj only if it is obtainable
 		R = [obj for obj in recs[imagename] if obj['name'] == classname]
-		if R  == []:
-			negative_gt.append(imagename)
 		bbox = np.array([x['bbox'] for x in R])
-		npos = npos + len(bbox)
 		det = [False] * len(R)
 		class_recs[imagename] = {'bbox': bbox,
 					'det': det}
+		# count each image only once for number of positives
+		if len(R) > 0:
+			npos += 1
+		else:
+			neg_imgs.append(imagename)
 
 	# read dets
 	detfile = detpath.format(classname)
@@ -288,176 +291,74 @@ def apc_evalv2_bak(detpath,
 
 	splitlines = [x.strip().split(' ') for x in lines]
 	# Filenames are split on ' '. In the image filenames there is already a space, therefore use the 2nd space as split
-	image_ids = [x[0] for x in splitlines]
-	confidence = np.array([float(x[1]) for x in splitlines])
+	image_ids	= np.array([x[0] for x in splitlines])
+	confidence	= np.array([float(x[1]) for x in splitlines])
 	BB = np.array([[float(z) for z in x[2:]] for x in splitlines])
+
+	# compute FALSE NEGATIVES, extended later
+	neg_dets	= set(imagenames) - set(image_ids)
+	tn			= len(set(neg_dets) & set(neg_imgs))
 	
-	# filter by confidence
-	thresh_range = np.arange(0.,1.,0.05)
-	tps = np.zeros(len(thresh_range))
-	fps = np.zeros(len(thresh_range))
-	tns = np.zeros(len(thresh_range))
-	tps_im = np.zeros(len(thresh_range))
-	fps_im = np.zeros(len(thresh_range))
-	fns_im = np.zeros(len(thresh_range))
-	for t, thresh in enumerate(thresh_range):
-		keep_ind = np.where(confidence > thresh)[0]
-		if len(keep_ind) > 0:
-			_BB = BB[keep_ind, :]
-			_image_ids = [image_ids[x] for x in keep_ind]
-			_class_recs = copy.deepcopy(class_recs)
+	# zip image_ids, condidence and BBe
+	all_boxes = zip(image_ids, confidence, BB)
 
-			# find true negative predictions and count tn
-			negative_preds = set(imagenames) - set(_image_ids) # negative predictions per image
-			true_negatives = set(negative_gt).intersection(negative_preds)
-			tn = len(true_negatives)
+	# group by image_id and pick the highest confidence
+	tp = 0
+	fp = 0
+	for key,group in itertools.groupby(all_boxes, operator.itemgetter(0)):
+		# sort by confidence
+		proposals	= list(group)
+		proposals	= sorted(proposals, key=lambda x: x[1])
+		# pick the highest confidence
+		best_det	= proposals[-1]
 
-			# go down dets and mark TPs and FPs per bbox and tp_im, fp_im per image
-			#nd = len(_image_ids)
-			tp = 0.
-			fp = 0.
-			tp_im = 0.
-			fp_im = 0.
-			fn_im = 0.
-			positive_imgs = set(_image_ids)
-			for image_id in positive_imgs:
-				ds = np.where(np.array(_image_ids)==image_id)[0]
-				for d in ds:
-					R = _class_recs[_image_ids[d]]
-					bb = _BB[d, :].astype(float)
-					ovmax = -np.inf
-					BBGT = R['bbox'].astype(float)
-					
-					if BBGT.size > 0:
-						ovmax, jmax = maxOverlaps(BBGT, bb)
-			
-					if ovmax > ovthresh:
-						if not R['det'][jmax]:
-							tp += 1.
-							R['det'][jmax] = 1
-						else:
-							fp += 1.
-					else:
-						fp += 1.
-				# tp_im is number of correctly detected images
-				det = _class_recs[image_id]['det']
-				if len(ds) > sum(det):
-					fp_im += 1.
-				elif len(ds) == sum(det) == len(det):
-					tp_im += 1.
-				elif sum(det) < len(det):
-					fn_im += 1.
+		# retrieve detection bb and gound truth BBGT
+		_image_id	= best_det[0]
+		_confidence	= best_det[1]
+		_bb			= best_det[2].astype(float)
+		_R			= class_recs[_image_id]
+		_BBGT		= _R['bbox'].astype(float)
 
-		else: # no detection left after filtering
-			tp = 0.
-			fp = -1.
-			tp_im = 0.
-			fp_im = -1.
-		# add tp, fp and tn for t-th thresh
-		tps[t] = tp
-		fps[t] = fp
-		tns[t] = tn
-		# add tp_im, fp_im, tn_im and fn_im for t-th thresh
-		tps_im[t] = tp_im
-		fps_im[t] = fp_im
-		fns_im[t] = fn_im
+		# filter by a threshold #TODO replace by class specific threshold
+		if best_det[1] < 0.5 and _BBGT.size == 0:
+			# add as TRUE NEGATIVE
+			tn += 1
+			continue
+		elif best_det[1] >= 0.5 and _BBGT.size == 0:
+			# add as FALSE NAGATIVE
+			fp += 1
+			continue
+		elif best_det[1] < 0.5:
+			# consider as FALSE NEGATIVE
+			continue
 
-	# compute fn and precision recall
-	fns = npos - tps
+		# calculate TRUE POSITIVES and FALSE POSITIVES
+		ovmax = -np.inf
+		ovmax, jmax = maxOverlaps(_BBGT, _bb)
+
+		if ovmax > ovthresh:
+			tp += 1
+		else:
+			fp += 1
+
+	# compute FASLSE POSTIVES
+	fn = npos - tp
+
+	# compute precision, recall, tpr and fpr
 	if npos > 0:
-		rec = tps / float(npos)
+		rec = tp / float(npos)
 	else:
-		rec = np.ones(len(tps))
-	# compute tpr and fpr per bbox
+		rec = 1
+	# compute tpr and fpr
 	tpr = rec
-	fpr = [fp / np.maximum(float(fp + tn), np.finfo(np.float64).eps) if fp != -1 else 0. for (fp,tn) in zip(fps,tns)]
+	fpr = fp / np.maximum(float(fp + tn), np.finfo(np.float64).eps)
 	
 	# avoid divide by zero in case the first detection matches a difficult
 	# ground truth, prec = 1 and recall = 0 if no detection kept
-	prec = [tp / np.maximum(float(tp + fp), np.finfo(np.float64).eps) if fp != -1 else 1. for (tp,fp) in zip(tps,fps)]
-	prauc = apc_auc(rec, prec, 'pr')
-	rocauc = apc_auc(fpr, tpr, 'roc')
+	prec = tp / np.maximum(float(tp + fp), np.finfo(np.float64).eps)
 
-	# comput tpr and fpr per image
-	tpr_im = [ tp_im / np.maximum(float(tp_im + fp_im), np.finfo(np.float64).eps) if fp_im != -1 else 0. for (tp_im,fp_im) in zip(tps_im,fps_im)]
-	fpr_im = [fp_im / np.maximum(float(fp_im + tn), np.finfo(np.float64).eps) if fp_im != -1 else 1. for (fp_im,tn) in zip(fps_im,tns)]
-	rocauc_im = apc_auc(fpr_im, tpr_im, 'roc')
+	print "(tp, fp, tn, fn) is ({},{},{},{})".format(tp, fp, tn, fn)
+
+	return tp, fp, tn, fn
 
 
-	return rec, prec, prauc, tpr_im, fpr_im, rocauc_im
-
-
-
-
-
-# Deprecated tn measures
-# Problem: easily more 1000 true negatives
-def computeTN_bak(detpath,
-		annopath,
-		imagesetfile,
-		classname,
-		ovthresh=0.5):
-	"""A function computing True Negative by comparing 
-	the background detected and GroundTruth"""
-
-	# first load gt
-	# read list of images
-	with open(imagesetfile, 'r') as f:
-		lines = f.readlines()
-	imagenames = [x.strip() for x in lines]
-
-	# load annots
-	recs = {}
-	for i, imagename in enumerate(imagenames):
-		recs[imagename] = parse_rec(annopath.format(imagename))
-
-	### Using background to calculate true negatives and false negatives
-	if classname == '__background__':
-		class_recs = {}
-		nneg = 0
-		for imagename in imagenames:
-			R = [obj for obj in recs[imagename]]		# Read all objects in this image
-			bbox = np.array([x['bbox'] for x in R])
-			nneg = nneg + len(bbox)
-			det = [False] * len(R)
-			class_recs[imagename] = {'bbox': bbox,
-					'det': det}
-	
-			# read dets
-		detfile = detpath.format(classname)
-		with open(detfile, 'r') as f:
-			lines = f.readlines()
-	
-		splitlines = [x.strip().split(' ') for x in lines]
-		# Filenames are split on ' '. In the image filenames there is already a space, therefore use the 2nd space as split
-		image_ids = [x[0] for x in splitlines]
-		confidence = np.array([float(x[1]) for x in splitlines])
-		BB = np.array([[float(z) for z in x[2:]] for x in splitlines])
-
-		# Sort by confidence
-		if len(confidence) > 0:
-			sorted_ind = np.argsort(-confidence)
-			sorted_scores = np.sort(-confidence)
-			BB = BB[sorted_ind, :]
-			image_ids = [image_ids[x] for x in sorted_ind]
-	
-			# go down dets and mark TNs and FNs
-			nd = len(image_ids)
-			tn = np.zeros(nd)
-			for d in range(nd):
-				R = class_recs[image_ids[d]]
-				bb = BB[d, :].astype(float)
-				ovmax = -np.inf
-				BBGT = R['bbox'].astype(float)
-				
-				ovmax, jmax = maxOverlaps(BBGT, bb)
-		
-				if ovmax < ovthresh:
-					if not R['det'][jmax]:
-						tn[d] = 1.
-						R['det'][jmax] = 1
-			tn = np.cumsum(tn)
-		else:
-			tn = [0]
-		
-		return tn[-1]
