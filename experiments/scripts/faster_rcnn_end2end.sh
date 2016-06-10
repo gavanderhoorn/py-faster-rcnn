@@ -28,6 +28,7 @@ case $DATASET in
     TEST_IMDB="voc_2007_test"
     PT_DIR="pascal_voc"
     ITERS=70000
+    WEIGHTS="${NET}.v2"
     ;;
   coco)
     # This is a very long and slow training schedule
@@ -37,24 +38,28 @@ case $DATASET in
     TEST_IMDB="coco_2014_minival"
     PT_DIR="coco"
     ITERS=490000
+    WEIGHTS="${NET}.v2"
     ;;
   apc)
     TRAIN_IMDB="apc_2016_trainval"
     TEST_IMDB="apc_2016_test"
     PT_DIR="apc"
     ITERS=80000
+    WEIGHTS="${NET}.v2"
     ;;
   apcbin)
     TRAIN_IMDB="apc_bin_trainval"
     TEST_IMDB="apc_bin_test"
     PT_DIR="apc"
     ITERS=20000
+    WEIGHTS="apc.base"
     ;;
   apctote)
     TRAIN_IMDB="apc_tote_trainval"
     TEST_IMDB="apc_tote_test"
     PT_DIR="apc"
     ITERS=20000
+    WEIGHTS="apc.base"
     ;;
   *)
     echo "No dataset given"
@@ -68,7 +73,7 @@ echo Logging output to "$LOG"
 
 time ./tools/train_net.py --gpu ${GPU_ID} \
   --solver models/${PT_DIR}/${NET}/faster_rcnn_end2end/solver.prototxt \
-  --weights data/imagenet_models/${NET}.v2.caffemodel \
+  --weights data/imagenet_models/${WEIGHTS}.caffemodel \
   --imdb ${TRAIN_IMDB} \
   --iters ${ITERS} \
   --cfg experiments/cfgs/faster_rcnn_end2end.yml \
