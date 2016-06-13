@@ -64,8 +64,10 @@ def vis_detections(im, class_name, dets, thresh=0.5):
 		bbox = dets[i, :4]
 		score = dets[i, -1]
 		print bbox, score
-		cv2.rectangle(image, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 3)
-		cv2.putText(image, class_name + " " + str(score), (int(bbox[0] + 10), int(bbox[1] + 30)), cv2.FONT_HERSHEY_PLAIN, 2.0, (255, 255, 0), 2)
+		cv2.rectangle(image, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 4)
+		cv2.putText(image, class_name + " %2.2f" % score, (int(bbox[0] + 10), int(bbox[1] + 30)), cv2.FONT_HERSHEY_SIMPLEX, 1, color=(0,0,0), thickness=3, lineType=cv2.CV_AA)
+		cv2.putText(image, class_name + " %2.2f" % score, (int(bbox[0] + 10), int(bbox[1] + 30)), cv2.FONT_HERSHEY_SIMPLEX, 1, color=(255,255,255), thickness=2, lineType=cv2.CV_AA)
+
 
 	return image
 
