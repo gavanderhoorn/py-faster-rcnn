@@ -203,10 +203,10 @@ def vis_detections(im_path, im, classes, all_boxes, thresh=0.05):
 				xmax = int(bbox[2])
 				ymin = int(bbox[1])
 				ymax = int(bbox[3])
-				cv2.rectangle(image,(xmin, ymin),(xmax, ymax),(255,255,255), 2)
-				cv2.putText(image,classes[j] + " " + str(score),(xmin,ymin+50),\
-						cv2.FONT_HERSHEY_COMPLEX,\
-						2, (255, 255, 255), 2, cv2.CV_AA)
+
+				cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 255, 0), 4)
+				cv2.putText(image, classes[j] + " %2.2f" % score, ((xmin + 10), int(ymin + 30)), cv2.FONT_HERSHEY_SIMPLEX, 1, color=(0,0,0), thickness=3, lineType=cv2.CV_AA)
+				cv2.putText(image, classes[j] + " %2.2f" % score, ((xmin + 10), int(ymin + 30)), cv2.FONT_HERSHEY_SIMPLEX, 1, color=(255,255,255), thickness=2, lineType=cv2.CV_AA)
 
 	im_name = os.path.basename(im_path)
 	im_write_path = os.path.join(cfg.DATA_DIR,'DRapc2016','testOutput',im_name)
