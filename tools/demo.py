@@ -137,6 +137,9 @@ def parse_args():
 						action='store_true')
 	parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16]',
 						choices=NETS.keys(), default='vgg16')
+	parser.add_argument('--caffemodel', dest='caffemodel', help='Caffemodel to use.',
+						default=None)
+
 
 	args = parser.parse_args()
 
@@ -151,9 +154,12 @@ if __name__ == '__main__':
 
 	prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
 							'faster_rcnn_end2end', 'test.prototxt')
-	caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
-							  NETS[args.demo_net][1])
-	
+	if args.caffemodel:
+		caffemodel = args.caffemodel
+	else:
+		caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
+								  NETS[args.demo_net][1])
+
 	print prototxt
 	print caffemodel
 
