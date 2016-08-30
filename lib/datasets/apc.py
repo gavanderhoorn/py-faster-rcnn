@@ -13,7 +13,7 @@ import numpy as np
 import scipy.sparse
 import scipy.io as sio
 import utils.cython_bbox
-import cPickle
+import _pickle as cPickle
 import subprocess
 import uuid
 from apc_eval import apc_eval

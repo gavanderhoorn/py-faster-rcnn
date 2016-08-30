@@ -33,7 +33,7 @@ import copy
 _classes = copy.deepcopy(classes_short)
 _classes["__background__"] = 0
 CLASSES = [k for k, v in sorted(_classes.items(), key=operator.itemgetter(1))]
-print CLASSES
+print(CLASSES)
 
 #CLASSES = ('__background__',
 #		'aeroplane', 'bicycle', 'bird', 'boat',
@@ -44,8 +44,7 @@ print CLASSES
 #		   'bottle', 'coffee', 'eraser', 'glucose', 'glue')
 
 NETS = {'vgg16': ('VGG16',
-#				  'VGG16_faster_rcnn_final.caffemodel'),
-				  'apc.caffemodel'),
+				  'apc_bin.caffemodel'),
 		'zf': ('ZF',
 				  'ZF_faster_rcnn_final.caffemodel')}
 
@@ -57,43 +56,16 @@ def vis_detections(im, class_name, dets, thresh=0.5):
 	if len(inds) == 0:
 		return image
 
-#	im = im[:, :, (2, 1, 0)]
-#	fig, ax = plt.subplots(figsize=(12, 12))
-#	ax.imshow(im, aspect='equal')
 	for i in inds:
 		bbox = dets[i, :4]
 		score = dets[i, -1]
-		print bbox, score
+		#print bbox, score
 		cv2.rectangle(image, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 4)
-		cv2.putText(image, class_name + " %2.2f" % score, (int(bbox[0] + 10), int(bbox[1] + 30)), cv2.FONT_HERSHEY_SIMPLEX, 1, color=(0,0,0), thickness=3, lineType=cv2.CV_AA)
-		cv2.putText(image, class_name + " %2.2f" % score, (int(bbox[0] + 10), int(bbox[1] + 30)), cv2.FONT_HERSHEY_SIMPLEX, 1, color=(255,255,255), thickness=2, lineType=cv2.CV_AA)
+		cv2.putText(image, class_name + " %2.2f" % score, (int(bbox[0] + 10), int(bbox[1] + 30)), cv2.FONT_HERSHEY_SIMPLEX, 1, color=(0,0,0), thickness=3, lineType=cv2.LINE_AA)
+		cv2.putText(image, class_name + " %2.2f" % score, (int(bbox[0] + 10), int(bbox[1] + 30)), cv2.FONT_HERSHEY_SIMPLEX, 1, color=(255,255,255), thickness=2, lineType=cv2.LINE_AA)
 
 
 	return image
-
-
-#	for i in inds:
-#		bbox = dets[i, :4]
-#		score = dets[i, -1]
-#
-#		ax.add_patch(
-#			plt.Rectangle((bbox[0], bbox[1]),
-#						  bbox[2] - bbox[0],
-#						  bbox[3] - bbox[1], fill=False,
-#						  edgecolor='red', linewidth=3.5)
-#			)
-#		ax.text(bbox[0], bbox[1] - 2,
-#				'{:s} {:.3f}'.format(class_name, score),
-#				bbox=dict(facecolor='blue', alpha=0.5),
-#				fontsize=14, color='white')
-#
-#	ax.set_title(('{} detections with '
-#				  'p({} | box) >= {:.1f}').format(class_name, class_name,
-#												  thresh),
-#				  fontsize=14)
-#	plt.axis('off')
-#	plt.tight_layout()
-#	plt.draw()
 
 def demo(net, image_name):
 	"""Detect object classes in an image using pre-computed object proposals."""
@@ -122,11 +94,9 @@ def demo(net, image_name):
 		keep = nms(dets, NMS_THRESH)
 		dets = dets[keep, :]
 		im = vis_detections(im, cls, dets, thresh=CONF_THRESH)
-
 	cv2.imshow("Image", im)
 	if cv2.waitKey() == ord('q'):
 		sys.exit()
-
 def parse_args():
 	"""Parse input arguments."""
 	parser = argparse.ArgumentParser(description='Faster R-CNN demo')
@@ -150,7 +120,7 @@ if __name__ == '__main__':
 
 	args = parse_args()
 
-	cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
+	#cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
 
 	prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
 							'faster_rcnn_end2end', 'test.prototxt')
@@ -160,8 +130,8 @@ if __name__ == '__main__':
 		caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
 								  NETS[args.demo_net][1])
 
-	print prototxt
-	print caffemodel
+	#print prototxt
+	#print caffemodel
 
 	if not os.path.isfile(caffemodel):
 		raise IOError(('{:s} not found.\nDid you run ./data/script/'
@@ -174,25 +144,24 @@ if __name__ == '__main__':
 		caffe.set_device(args.gpu_id)
 		cfg.GPU_ID = args.gpu_id
 
-	print "NET creation parameters:"
-	print "prototxt: "
-	print prototxt
-	print "caffemodel: "
-	print caffemodel
+	print ("NET creation parameters:")
+	print ("prototxt: ")
+	print (prototxt)
+	print ("caffemodel: ")
+	print (caffemodel)
 	net = caffe.Net(prototxt, caffemodel, caffe.TEST)
 
-	print '\n\nLoaded network {:s}'.format(caffemodel)
+	print ('\n\nLoaded network {:s}'.format(caffemodel))
 
 	# Warmup on a dummy image
 	im = 128 * np.ones((300, 500, 3), dtype=np.uint8)
-	for i in xrange(2):
+	for i in range(2):
 		_, _= im_detect(net, im)
 
-	#im_names = ['image1.jpg']
 	im_names = [f for f in os.listdir("data/demo/") if f.endswith(".jpg") or f.endswith(".png")]
 	for im_name in im_names:
-		print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-		print 'Demo for data/demo/{}'.format(im_name)
+		print ('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+		print ('Demo for data/demo/{}'.format(im_name))
 		demo(net, im_name)
 
 	plt.show()

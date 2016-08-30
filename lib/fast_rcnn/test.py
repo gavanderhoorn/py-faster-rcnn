@@ -15,7 +15,8 @@ import numpy as np
 import cv2
 import caffe
 from fast_rcnn.nms_wrapper import nms
-import cPickle
+#import cPickle
+import _pickle as cPickle
 from utils.blob import im_list_to_blob
 import os
 
@@ -296,7 +297,7 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 			all_boxes[i][j] = cls_dets
 		
 		if vis:
-			print "show image"
+			print("show image")
 			vis_detections(imdb.image_path_at(i),im, imdb.classes_short, all_boxes[i][:], thresh)
 
 		# Limit to max_per_image detections *over all classes*
@@ -318,14 +319,13 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 
 		_t['misc'].toc()
 
-		print 'im_detect: {:d}/{:d} {:.3f}s' \
-				.format(i + 1, num_images, _t['im_detect'].average_time)
+		print('im_detect: {:d}/{:d} {:.3f}s' .format(i + 1, num_images, _t['im_detect'].average_time))
 
 	det_file = os.path.join(output_dir, 'detections.pkl')
 	with open(det_file, 'wb') as f:
 		cPickle.dump(all_boxes, f, cPickle.HIGHEST_PROTOCOL)
 
-	print '\nEvaluating detections\n'
+	print ('\nEvaluating detections\n')
 	performance = imdb.evaluate_detections(all_boxes, output_dir)
 
 
