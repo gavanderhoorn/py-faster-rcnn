@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-
 # --------------------------------------------------------
 # Faster R-CNN
 # Copyright (c) 2015 Microsoft
 # Licensed under The MIT License [see LICENSE for details]
 # Written by Ross Girshick
 # --------------------------------------------------------
+
 
 """
 Demo script showing detections in sample images.
@@ -79,8 +79,7 @@ def demo(net, image_name):
 	timer.tic()
 	scores, boxes = im_detect(net, im)
 	timer.toc()
-	print ('Detection took {:.3f}s for '
-		   '{:d} object proposals').format(timer.total_time, boxes.shape[0])
+	print ('Detection took {:.3f}s for {:d} object proposals'.format(timer.total_time, boxes.shape[0]))
 
 	# Visualize detections for each class
 	CONF_THRESH = 0.3
@@ -120,7 +119,6 @@ if __name__ == '__main__':
 
 	args = parse_args()
 
-	#cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
 
 	prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
 							'faster_rcnn_end2end', 'test.prototxt')
